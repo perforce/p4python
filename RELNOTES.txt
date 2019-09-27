@@ -1,0 +1,1210 @@
+                            Release Notes for
+               P4Python, Helix Core API for Python 
+
+                             Version 2019.1
+
+Introduction
+
+	This document lists all user-visible changes to P4Python starting
+	from release 2007.3, the first supported P4Python release.
+
+	Perforce numbers releases YYYY.R/CCCCC, for example, 2007.3/30547.
+	YYYY is the year; R is the release of that year; CCCCC is the
+	bug fix change level. Each bug fix in these release notes is
+	marked by its change number. Any build includes all bug fixes
+	of all previous releases and all bug fixes of the current
+	release up to the bug fix change level.
+
+	To display the version of P4Python you have installed,
+	start Python and issue the following commands:
+
+		>>> import P4
+		>>> print(P4.P4.identify())
+
+--------------------------------------------------------------------------
+
+Installing P4Python
+
+	Windows users can download an installer containing pre-built
+	packages for P4Python from the Perforce FTP site at
+	ftp://ftp.perforce.com/perforce. Users on other platforms must
+	build from source, as detailed below.
+
+--------------------------------------------------------------------------
+
+Installation via pip
+
+	P4Python can be installed via pip from 2015.1 onwards. Simply run
+	the command
+
+		pip install p4python
+
+	Note that previous versions of P4Python should be uninstalled first,
+	since they were built using distutils and not setuptools (the installer
+	will warn about this). Once installed via pip, future releases of
+	P4Python can be installed by adding the upgrade option to pip
+
+		pip install --upgrade p4python
+
+	P4Python is distributed as a binary wheel on Windows (32 and 64 bit) and
+	some versions of Python on Mac for 64 bit only. Currently, binary wheels
+	for Python 2.7, 3.3, 3.4, 3.5, 3.6 and 3.7 will be supplied.
+
+	On Linux no binary wheel is available. Instead, pip will download the
+	source release and attempt to build P4Python locally. This requires
+	installation of:
+
+		python-dev
+		build-essential
+		openssl-dev (for SSL support)
+
+        And OpenSSL 1.0.2+ or 1.1.1+ with libraries installed.
+
+--------------------------------------------------------------------------
+
+Upgrading P4Python
+
+	Before installing P4Python 2019.1, uninstall any older versions of
+	P4Python. Some earlier versions of P4Python consisted of the
+	following files, which must be deleted before installing a later
+	version:
+
+		p4.py
+		p4.pyc
+		p4.pyo
+		P4Client.pyd
+
+--------------------------------------------------------------------------
+
+Installing P4Python for Maya.
+
+        Maya has a private python executable called "mayapy".   The instructions for installation
+        are the same as the source install below, except use "mayapy" instead of "python". 
+
+--------------------------------------------------------------------------
+
+Building P4Python from Source
+
+	1. Download the r19.1 Perforce C++ API from the Perforce FTP site at
+	   "ftp://ftp.perforce.com/perforce". The API archive is located
+	   in release and platform-specific subdirectories.
+
+	   Under Linux the p4api is named p4api-glib<GLIBVER>-openssl<SSLVER>.tgz 
+           Note that setup.py will download the correct p4api automatically from ftp.perforce.com 
+           if you do not provide an --apidir parameter to the setup.py "build" command.
+
+	   Mac OS X users should get the API from the "bin.macosx1010x86_64" platform directory.
+	   the p4api is named p4api-openssl<SSLVER>.tgz
+
+	   Under Windows the p4api needs to match your compiler, build type (static or dynamic)
+           and SSL version.  for instance:
+ 
+           "p4api_vs2010_static_openssl1.1.1.zip" or "p4api_vs2015_dyn_openssl1.0.2.zip"
+
+	   Note: 32-bit builds of P4Python require a 32-bit version of the
+	         C++ API and a 32-bit version of Python. 64-bit builds of
+	         P4Python require a 64-bit version of the C++ API and a
+	         64-bit version of Python.
+
+	   Unzip the archive into an empty directory.
+
+	2. Extract the P4Python API archive into a new, empty directory.
+
+	3. If needed, install the Openssl libraries.
+
+	4. To build P4Python, run the following command:
+
+	   python setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path>
+
+	   Note: in order to reinstall cleanly P4Python, remove the
+	         directory named "build".
+
+	5. To test your P4Python build, run the following command:
+
+	   python p4test.py
+
+	   Note: this test harness requires the Perforce server executable
+	         p4d 17.1 or better to be installed and in the PATH.
+
+	6. To install P4Python, run the following command:
+
+	   python setup.py install
+           
+           if this doesn't work, you may need to both build and install in the same incantation:
+
+           python setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path> --install
+
+	   Note: on Unix/Mac platforms, the installation must be performed
+	         as the root user, so usually these commands are preceded by "sudo". 
+                 Also ensure that the umask is set correctly (typically 0022) before running the install.
+	         With a umask of 027, for example, the resulting installed
+	         files are accessible only by users of group root.
+
+           Note: on Windows platforms, open a Visual Studio Command window (with administrator permissions) and run the 
+                 command there.
+
+	SSL support
+	-----------
+
+	Perforce Server 2012.1 and later supports SSL connections and the
+	C++ API has been compiled with this support. With 2019.1 SSL support
+	is mandatory, that is, P4Python must be linked with valid OpenSSL
+	1.0.2 or 1.1.1 libraries.
+
+	To specify which SSL library to use, provide the --ssl [librarypath]
+	switch to the build. Without [librarypath] setup will attempt to run
+	"openssl version" to identify the location of the library path for
+	openssl and whether openssl has an appropriate version to link to.
+	(currently either 1.0.2 or 1.1.1).
+
+	If on linux, and the build process cannot find the correct openssl libraries, and the
+	 -ssl option was not used, then the openssl source will be downloaded, compiled and
+	 installed (this will require a superuser password for the installation)
+
+--------------------------------------------------------------------------
+
+Compatibility Statements
+
+	Server Compatibility
+
+	  You can use any release of P4Python with any release of the
+	  Perforce server later than 2001.1
+
+	API Compatibility
+
+	  The 2019.1 release of P4Python requires at least 2019.1 Perforce API.
+	  Older releases will not compile and are not supported.
+
+	Python Compatibility
+
+	  The 2019.1 release of P4Python is supported building from
+	  source with Python 2.6, 2.7, 3.3, 3.4, 3.5, 3.6 and 3.7.
+	  Python 3.0, 3.1 and 3.2 are not supported.
+
+	  For detailed compatibility, please check the following table:
+
+		Python Release | P4Python Release
+		======================================
+		2.3 or earlier | not supported
+		2.4            | 2008.2 (unsupported)
+		2.5            | 2007.3 up to 2009.2 (unsupported)
+		2.6            | 2009.1 or later
+		2.7            | 2010.1 or later
+		3.0            | 2010.1 up to 2012.3 (unsupported)
+		3.1            | 2010.2 up to 2012.3 (unsupported)
+		3.2            | 2011.1 up to 2012.3 (unsupported)
+		3.3            | 2012.3 or later
+		3.4            | 2014.1 or later
+		3.5            | 2014.1 or later
+		3.6            | 2016.2 or later
+		3.7            | 2018.2 or later
+
+
+	  The P4Python installers on Windows support 2.7, 3.3, 3.4, 3.5, 3.6 and
+	  3.7 for both 32 and 64 bit. The installers have been changed to
+	  standard Python installers in MSI format and will support multiple
+	  Python installations.
+
+	OpenSSL Compatibility
+
+	  To build P4Python with encrypted communication support, you must
+	  use the version of OpenSSL that Perforce C/C++ API has been
+	  built against.  
+
+	  For detailed compatibility, please check the following table:
+
+		Perforce C/C++ API Version | OpenSSL Release
+		============================================
+		     2012.1                |    1.0.0
+		     2012.2 - 2014.2       |    1.0.1g+
+		     2015.1                |    1.0.1k+
+		     2016.2                |    1.0.2k+
+		     2018.1                |    1.0.2j+
+		     2019.1                |    1.0.2k+ or 1.1.1+
+
+	Platform Compatibility
+
+	  This release is certified on the following platforms:
+
+		Linux 2.6+ Intel (x86, x86_64)
+		Windows 10, 8, Vista, 7, 2008, 2012 Intel (x86, x86_64)
+		Mac OS X 10.9 - 10.14 (x86_64)
+
+	  Note: As of 2012.1, a universal build of the Perforce C/C++
+		API is no longer available for Darwin or Mac OS X.
+		P4Python is now a 64-bit only library on Darwin. This
+		has been tested with a universal build of Python and
+		is known to work.
+
+	Compiler Compatibility
+
+	  To build P4Python from source, you must use a version of
+	  P4Python that has been compiled with the same compiler used to
+	  build the Perforce C++ API. For most platforms, use gcc/g++.
+	  
+          On Linux since the 2019.1 P4API release, due to a change in library dependencies,
+          the source code requires gcc 6 or above to be used.
+
+	  Attempting to use a different compiler or a different version
+	  of the compiler will cause link errors due to differences in name handling.
+
+          For more information about P4API compiler requirements, please see this link:
+          https://www.perforce.com/manuals/p4api/Content/P4API/client.programming.compiling.html
+
+	  On Windows platforms, the P4Python installer is build with Python from
+	  python.org. The installer for Python 3.5, 3.6 and 3.7 was built with
+	  Visual Studio 2015, for Python 3.4 and 3.3 Visual Studio 2010 was
+	  used, and Visual Studio 2008 for Python 2.
+
+	  To run Python 3.5+ on older versions of Windows (such as 7), it might
+	  be necessary to install the redistributable version of the 2015
+	  libraries, vc_redist.x64.exe or vc_redist.x86.exe, respectively for
+	  64 bit and 32 bit. Without these libraries the DLL for P4API will not
+	  load into Python and the command 'import P4' will fail.
+
+	Known Limitations
+
+	  The Perforce client-server protocol is not designed to support
+	  multiple concurrent queries over the same connection. For this
+	  reason, multi-threaded applications using the C++ API or the
+	  script APIs (P4Perl, P4Ruby, etc.) should ensure that a
+	  separate connection is used for each thread or that only one
+	  thread may use a shared connection at a time.
+
+	Source Availability
+
+	  The official version of P4Python exists as source on
+	  https://pypi.python.org/pypi/P4Python. 
+
+	Attributes
+	----------
+
+	Perforce P4Python provides the attributes listed below. Attributes
+	can be set in the P4() constructor or by using their setters and
+	getters. For example:
+
+	>>> import P4
+	>>> p4 = P4.P4(client="myclient", port="1666")
+	>>> p4.user = 'me'
+
+	Most attributes can be set and read. Attributes are strings unless
+	noted otherwise.
+
+	api_level		API compatibility level, INTEGER
+
+	charset			The character set to use. String,
+				not a constant as in previous versions
+
+	client			Client to use (P4CLIENT)
+
+	cwd			Current Working Directory
+
+	debug			Debug level (for debugging P4Python), INTEGER
+
+	errors			Array of errors returned by the server
+				(Read-Only), LIST
+
+	exception_level		Determines whether exceptions are thrown,
+				INTEGER
+
+	host			Client Host
+
+	input			Input for next command, can be STRING, LIST
+				or DICTIONARY
+
+	maxlocktime		MaxLockTime for commands, INTEGER
+
+	maxresults		MaxResults for commands, INTEGER
+
+	maxscanrows		MaxScanRows for commands, INTEGER
+
+	p4config_file		Returns the config file path (Read-Only)
+
+	ignore_file     Ignore file used
+
+	password		Value of P4PASSWD
+
+	port			Value of P4PORT
+
+	prog			Name of the script, shown in the server log
+
+	server_level		Returns the server level (Read-Only)
+
+	tagged			Boolean value, determines whether to use
+				tagged mode, INTEGER
+
+	ticket_file		Returns the name of the ticket file
+
+	user			Value of P4USER
+
+	warnings		Array of warnings returned by the server
+				(Read-Only), LIST
+
+	Tagged mode and form parsing
+	----------------------------
+
+	In Perforce P4Python 2007.3 and later, form parsing and tagged
+	output are enabled by default. (In Public Depot P4Python,
+	tagged output and form parsing mode were disabled by default,
+	but most scripts enabled them immediately.)
+
+	Form parsing cannot be disabled explicitly, but tagged output can
+	be enabled or disabled by setting p4.tagged as follows:
+
+		p4.tagged = False    # Disabled
+		p4.tagged = True    # Enabled
+
+	This method can be used to disable form parsing, because
+	form parsing does not work when tagged output is
+	disabled.
+
+--------------------------------------------------------------------------
+
+Key to symbols used in change notes below.
+
+	  * -- requires new P4Python
+	 ** -- requires new p4d server program
+	*** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionality in 2019.1
+
+    #1804040 (Bug #98777) * ***
+    P4Python now requires p4api 2019.1
+    Added OSX support for 10.14,  removed support for 10.8 and earlier
+    Added additional libraries from p4api 19.1 to the link lines on all platforms.
+    Fixed name conflicts between p4python modules and p4api extensions.
+    On Linux, detect glib version so the correct p4api libraries are downloaded and linked.
+
+    #1804040 (Bug #97426) * ***
+     Will now link with either openssl 1.0.2 or 1.1.1
+
+    #1804040  (Bug #98778) *
+    On Linux, if -ssl is not specified, will look for compatible ssl libraries,
+       and if not found, will download the openssl source, and build and install it.
+
+    #1894940 * (Bug #98779) *
+    Fixed Windows issue where OpenSSL library names changed with Openssl 1.1.0+
+
+Bug fixes in 2019.1
+
+   #1804040 (Bug #98261) *
+    Changed setup.py to use subclasses, and process arguments the way setuputils wants.
+
+    #1894940 (Bug #98423) *
+    Regex change to allow for space/extra characters in OpenSSL version
+
+    #1841909 (Bug #99571) *
+    Memory leak in P4Result::Reset
+
+    #1841909 (Bug #99549) *
+    Memory leak in Exception Handler
+
+    #184040 (Bug #98782) *
+    P4Python does not install correctly with Maya 2019 "mayapy" interpreter
+
+    #1812102 (Bug #98261) *
+    P4Python attempts to download P4API every time, ignoring --apidir
+
+----------------------------------------------------------------------------
+
+New functionality in 2018.2
+
+	#1725050 (Bug #95692) *
+	    Added support for Python 3.7.
+
+--------------------------------------------------------------------------
+
+New functionality in 2017.2
+
+Bug fixes in 2017.2
+	#1612945 (Bug #85554, #94070) *
+	    Removed memory leak (and potential crashes) caused by P4.P4Message,
+	    P4.P4MergeData, P4.P4ActionMergeData and P4.P4Map not being
+	    correctly initialised.
+
+	#1614534 (Bug #93512) *
+	    Protect p4.run_resolve(resolver=Resolver()).
+	    If the resolver object returns anything but a string, check and
+	    throw a warning instead of crashing Python.
+
+	#1613710 (Bug #90903) *
+	    Extend the prog string with the Python, P4Python and P4API version
+	    to enhance debugging and logging. The appended string looks like
+	    this [PY3.6.3/P4PY2017.2/API2018.1/1592142] and will be appended
+	    even if P4.prog is set by the user.
+
+	#1613337 (Bug #93280) *
+	    Clean up temporary P4API files if downloaded from the ftp site. This
+	    is particular useful if P4Python is installed via pip by multiple
+	    users on a shared server.
+
+	#1562323 (Bug #92590) *
+	    Permit assignment of single string values to spec fields that
+	    require a list, for example the 'View' or 'AltRoots' field in the
+	    client spec. The string is treated like an array of 1 element. When
+	    reloading the spec, the field will be converted to an array.
+
+	#1602183 (Bug #86321) *
+	    Ensure context handlers correctly reset values if an exception is
+	    thrown inside the body of the context handler. This also applies if
+	    the context is set inside the run method as a karg, for example:
+	      p4.run_info(tagged=False)
+
+--------------------------------------------------------------------------
+
+New functionality in 2017.1
+
+	#1525945 *
+	    Protect automatic P4Python installs from P4API changes. This makes sure
+	    that 'pip install p4python' on Linux uses the tested version of P4API.
+
+	#1523857 *
+	    Added support for graph depots (Helix4Git). P4.graph is set to 1
+	    by default to enable graph commands. Support can be disabled by setting
+	    P4.graph to 0.
+
+	#1500363  (Bug #90902) *
+	    Added support for P4.p4config_files, which returns a list of p4config
+	    files in case of nested usage. P4.p4config_file (note the missing s)
+	    only returns the outermost config file.
+
+	#1501292 *
+	    Added support for setting (client-side) tunables:
+	        P4.set_tunable(key, value)
+	        P4.get_tunable(key)
+
+--------------------------------------------------------------------------
+
+New functionality in 2016.2
+
+	#1446623 * ** ***
+	    Added support for P4Map.translate_array.
+	    This method is useful when translating ditto (&) mapping, which can
+	    result in more than one answer.
+
+Bug fixes in 2016.2:
+
+	#1477171 (Bug #89757) *
+	    Fixed parsing expression for the output of 'openssl version' for
+	    1.0.2. This fix allows P4Python to be build with SSL support on
+	    Ubuntu Xenial (16.04) when installing via pip.
+
+	#1436215 *
+	    P4.clone() without a directory parameter would segfault if the
+	    target directory is already in use. Now the exception will print
+	    out directory '.' instead.
+
+Bug fixes in 2016.2 Patch 1
+
+	#1497579 (Bug #90749) *
+	    Removed spurious output of "*** It is not a list, I am confused"
+	    when parsing hand-crafted spec strings with added comments.
+
+	#1493809 *
+	    Protect encoding test case from crashing macOS Sierra (10.12)
+
+--------------------------------------------------------------------------
+
+New functionality in 2016.1
+
+	#1399690 * ** ***
+	    Comments in the protection table are now supported by P4.Spec.
+	    The comment is preserved as part of each protection table entry,
+	    so a script parsing the protection table needs to be able to expect
+	    an entry to be followed by a hash (#) and a comment.
+
+	#1369476 (Bug #83827) *
+	    Installing P4Python via pip under Linux will now attempt to link
+	    against the OpenSSL libraries if installed. If no suitable OpenSSL
+	    library can be found, P4Python will be installed without SSL support.
+
+	#1349961 * **
+	    Added P4.define_spec, which makes it possible to preload the spec cache
+	    with a spec definition. This is particularly useful when used with
+	    form-triggers that use the new 2016.1 variable %specdef%.
+
+	#1349960 * ** ***
+	    Support for ditto (&) mapping in P4.Map.
+
+Bugs fixed in 2016.1 Patch 1:
+
+	#1445730 (Bug #88664) *
+	    P4.Map() correctly handles overlay mappings again.
+
+	#1442582 (Bug #88605)
+	    P4.run_login now takes an optional "password" keyword. This
+	    simplifies the login process from this:
+	        p4.password = "secret"
+	        p4.run_login()
+	    to this:
+	        p4.run_login(password="secret")
+
+	#1443446 (Bug #88606)
+	    Logging interface now logs warnings and errors as well.
+
+--------------------------------------------------------------------------
+
+New functionality in 2015.2
+
+Bugs fixed in 2015.2
+
+	#1315696
+	    Added arguments and keyword arguments (args and kargs) to
+	    P4.run_login and P4.run_password for completeness.
+
+	#1319215 (Bug #81071)
+	    Use C++ P4API for 'p4 init' and 'p4 clone'. The 2015.1
+	    implementation required a P4 executable in the path of the script.
+
+	#1316068 (Bug #84024)
+	    Updated the spec map in line with the 2015.2 server changes.
+
+Bugs fixed in 2015.2 Patch 1
+
+	#1338889 (Bug #84749)
+	    Improve encoding for Python3 to allow sending Unicode strings
+	    to a non-Unicode server without converting the strings to UTF8.
+	    Also adds the ability to encode strings yourself and send bytes-
+	    encoded strings instead.
+
+	#1340547
+	    Fixed spec string for "typemap", "protect" and "triggers" commands.
+
+	#1341514
+	    Added test cases for spec parsing and formatting.
+
+--------------------------------------------------------------------------
+
+New functionality in 2015.1
+
+	#1039185 (Bug #78154) * **
+	    Support for new DVCS commands 'p4 init' and 'p4 clone'. The commands
+	    are implemented as factory methods P4.init and P4.clone respectively
+	    and create a new P4 instance pointing to the DVCSworkspace.
+
+	#1005721 (Bug #062356) *
+	    Support for PyPi. P4Python can now be installed with a simple:
+	        pip install p4python
+	    on many supported platforms as a binary install, and as source on
+	    Linux, where it will attempt to automatically build.
+
+	#1042731 *
+	    Support for automatically downloading P4API on appropriate
+	    platforms. If P4Python is built without the --apidir switch, setup
+	    will now attempt to connect to ftp.perforce.com to download the
+	    correct P4API binary for this platform and unpack it in a temporary
+	    directory.
+
+	#1042578 *
+	    Support for automatic SSL-enabled builds. If the switch --ssl is
+	    provided without a path, setup will attempt to determine the correct
+	    path of the SSL libraries by running 'openssl version'.
+
+--------------------------------------------------------------------------
+
+New functionality in 2014.2
+
+	#945604 * ***
+	    P4ENVIRO file can now be enquired and set within P4Python through
+	    the string variable P4.p4enviro_file.
+
+	#948607 *
+	    Support Python logging interface.
+	    When a Python logger is assigned to P4.logger, P4Python will log all
+	    commands executed through the P4.run interface as INFO.
+	    Additionally, any warning or error from Perforce is reported as
+	    INFO, WARNING or ERROR in the log. By setting a logger, P4.debug is
+	    automatically set to 1 to facilitate command logging. Setting a
+	    higher value of P4.debug will also log additional information as
+	    DEBUG. The logging reporting level in the assigned logger and
+	    handlers must be set to the correct level to see any log output.
+
+--------------------------------------------------------------------------
+
+New functionality in 2014.1
+
+	#779528 (Bug #64555) * ***
+	    Added P4.is_ignored(<path>), which allows a user to determine
+	    whether a particular file is ignored via the P4IGNORE feature.
+	    <path> needs to be a local relative or absolute path.
+	    Call P4.ignore_file to see which P4IGNORE file is used. Setting
+	    P4.ignore_file has to happen before the first time P4.is_ignored()
+	    is used and has no influence on the environment.
+
+	#706047 (Bug #64849) *
+	    Added context manager for temporary workspaces in P4Python.
+	    P4.temp_client(prefix, template) will create a temporary workspace
+	    based on the template. The client workspace name starts with the
+	    prefix to make it easy to exclude the workspace from the spec depot.
+	    Use this feature with the Python "with" keyword.
+
+Bugs fixed in 2014.1
+
+	#895310 (Bug #74027) *
+	    If a form-out trigger prints out a message before sending the spec,
+	    P4#fetch_spec would swallow the spec file (such as change or client)
+	    and only print the message. This is now fixed.
+
+	#736768 *
+	    P4Python now builds on Mac OSX Maverick (i.e. Darwin 13)
+	    P4.identify() will report P4PYTHON/DARWIN100X86_64
+
+	#706046 (Bug #68737)*
+	    Fixed P4.iterate to reject illegal commands.
+
+	#693300 (Big #69143) *
+	    Added P4.disable_tmp_cleanup to prevent cleanup if temporary
+	    objects. Invoke this before connecting if you are using multiple P4
+	    connections in parallel in a multi-threaded Python application.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.1
+
+	#628525 *
+	    When using Python 3.X P4Python created a memory leak for
+	    every call. This has now been fixed. Note that the
+	    fix requires upgrading to Python 3.3. All previous version of
+	    Python 3.X are not supported and P4Python 2013.1 will not
+	    compile with these releases.
+
+	#634817 *
+	    Reformatted P4.py to use spaces instead of tabs, following
+	    the Python coding standard.
+
+--------------------------------------------------------------------------
+
+New functionality in 2012.3
+
+	#533539 *
+	    P4Python is now compatible with Python 3.3 and will complete
+	    all test cases.
+
+	#564572 (Bug #59272) *
+	    Comments in forms are now preserved in the spec object when using
+	    P4.parse_spec. The comment can be accessed and changed through the
+	    P4.Spec.comment attribute. Comments are used by the P4.format_spec
+	    methods such as P4.format_client(). This is useful for form-out
+	    triggers.
+
+	#568867 *
+	    When decoding strings in Python 3 from a non-Unicode Perforce
+	    server, P4Python normally assumes that all strings are encoded in
+	    UTF8. P4.encoding can be set to a legal Python encoding to change
+	    the decoding of any content from the Perforce Server. If P4.encoding
+	    is set, any decoding error will cause an exception to be thrown.
+	    The special encoding 'raw' can be used to receive Python bytes
+	    instead of Unicode strings.
+	    P4.encoding is only available when compiled with Python 3.
+
+Bugs fixed in 2012.3
+
+	#564572 (Bug #32834) *
+	    In Python 3 it was impossible to reset the charset to None or ''.
+	    This is now fixed.
+
+--------------------------------------------------------------------------
+
+New functionality in 2012.2
+
+	#524819 (Bug #59800) *
+	    P4Python now supports Apple Mountain Lion (10.8).
+
+	#503392 (Bug #56081) *
+	    P4.run_print() would return None for a non-existing file.
+	    Now it returns [] for consistency.
+
+	#503375 (Bug #56479) *
+	    Added P4.run_tickets() method to list local tickets.
+	    Note that P4.run('tickets') still gives the old error
+	    message "Must upgrade to 2004.2 p4 to access tickets."
+
+	#498110 (Bug #56512) * ** ***
+	    Support for the new progress indicator API. P4Python
+	    supplies a new progress attribute, which can take an
+	    instance of P4.Progress class or subclass. Progress
+	    information is currently only supported for submits and
+	    sync -q. Details can be found in the documentation.
+
+	#491236 (Bug #57828) *
+	    New convenience method P4.iterate_<specs>() that allows
+	    easy iteration through some or all spec objects such as
+	    clients or changes. Details can be found in the documentation.
+
+Bugs fixed in 2012.2
+
+	#513715 (Bug #59191) *
+	    Fixed a bug where P4Python would leak memory when calling
+	    an OutputHandler, and would leak more memory if the
+	    OutputHandler returned HANDLED.
+
+	 #512425 (Bug #58722) *
+	    P4#parse_client could raise the exception "Unknown field name
+	    'StreamAtChange'." when parsing a stream client workspace.
+	    Internal spec definition has been updated to resolve this.
+
+--------------------------------------------------------------------------
+
+New functionality in 2012.1
+
+	#403096 (Bug #51898) * ** ***
+	    Enable "action resolve" to support resolves of branches,
+	    deletes and file types. The existing P4.Resolver class
+	    has been extended with a new method actionResolve() that
+	    will be invoked if an "action resolve" is required.
+	    Details can be found in the documentation.
+
+	#411866 (Bug #51896) * ** ***
+	    P4Python supports SSL connections if compiled with SSL
+	    support. Instructions on how to compile with SSL support can
+	    be found at the top of this document under "Building P4Python
+	    from Source" and in the documentation.
+
+	    P4.identify() will then report the version of the OpenSSL
+	    library used for building the Perforce C++ API (not the
+	    version P4Python is linked against).
+
+Bugs fixed in 2012.1:
+
+	#510916 (Bug #59060) *
+	    Fixed a bug where P4Python would increment the reference
+	    count of an OutputHandler each time run was called.
+
+	#446148 (Bug #55062) *
+	    Fixed a test hardness due an incompatibility with Python 2.6
+
+	#397007 (Bug #49820) *
+	    A fatal server error would leave P4Python in an undefined
+	    state which would result in incorrect output for
+	    successive commands. P4Python will now disconnect and
+	    clean up when encountering a fatal error.
+
+	#420204 (Bug #52909) *
+	    Python would crash with a segmentation fault if a custom
+	    Resolver object was used to resolve binary files. Fixed.
+
+--------------------------------------------------------------------------
+
+New functionality in 2011.1
+
+	#328169 (Bug #45862) * **
+	    Enable streams in P4Python by default. With this change,
+	    streams specific specs such as streams depots are listed.
+	    Disable the listing of streams specific specs by either
+	    setting the api_level to a value below 70 or by disabling
+	    stream handling explicitly through the P4.streams attribute:
+
+	      p4.streams = False
+
+	#318056 *
+	    All run methods now support keyword arguments in order
+	    to disable 'tagged' mode or to provide an OutputHandler
+	    for a single command only without having to wrap the command
+	    in a 'with' block:
+
+		p4.run_counter('mycounter', tagged = False)
+		p4.run_files('//...', handler = MyOutputHandler() )
+
+	    More than one keyword argument can be provided if required.
+	    All attributes that can be changed for an active connection
+	    can be provided as keyword arguments.
+
+	#317619 (Bug #42251) *
+	    P4Python supports a callback interface by providing a
+	    P4.handler attribute. Set P4.handler to an instance of a
+	    subclass of P4.OutputHandler to enable callbacks.
+	    When a handler is defined, P4Python will invoke the handler
+	    for every response it receives from the Perforce Server
+	    immediately instead of collecting all results together in
+	    an array first. This can be used to make applications more
+	    scalable and more responsive if large results are expected.
+	    See the documentation for details on the OutputHandler class.
+
+	#331330 (Bug #43211) *
+	    P4Python now allows setting P4 registry values on Windows and
+	    Mac OS. P4.set_env(name, value) sets an entry and P4.set_env(name)
+	    deletes the entry. This is equivalent to running
+	    'p4 set name=value' from the command line.
+
+Bugs fixed in 2011.1
+
+	#385159 (Bug #49324) ***
+	    On Windows Vista, Windows 7, or Windows 2008, a client running as
+	    Administrator would fail to properly process file names in
+	    non-ASCII character sets (such as Shift-JIS).
+
+	#328989 (Bug #44038) *
+	    Prevent users from assigning non-string values to spec
+	    objects such as labels or client workspaces. Assigning
+	    values other than strings could crash P4Python.
+
+	#328975 (Bug #45395) *
+	    Updated the stored spec templates for user, client and change
+	    and added streams. These are required, for example,
+	    for form-triggers that do not connect to the server first.
+
+	#328952 (Bug #45956) *
+	    Under some circumstances P4Python would try to raise
+	    a P4Error, which has been renamed to P4Exception.
+	    This is now fixed.
+
+	#328223 (Bug #44820) *
+	    P4.identify() reports the platform on Mac OS as DARWIN in line
+	    with all other Perforce products.
+
+	#328187 (Bug #44819) *
+	    P4.identify() now reports P4Python as P4PYTHON in line with
+	    all other Perforce products.
+
+	#326428 (Bug #46255) *
+	    P4.Map.reverse would return a P4API.P4Map object. It now
+	    returns an instance of P4.Map instead.
+
+	#323887 (Bug #46151) *
+	    P4.run_filelog() would throw an exception for rare
+	    circumstances where no digest is defined for for a deleted
+	    revision that was later readed. This is now fixed.
+
+	#312206 (Bug #44742) *
+	    Info messages were not shown when an exception was thrown.
+	    This is because all messages of type info get silently
+	    swallowed. They will still not show in the output with this
+	    change, but they will be logged in the P4.message list.
+	    Info messages like this will be forwarded to the OutputHandler
+	    if present.
+
+--------------------------------------------------------------------------
+
+New functionality in 2010.2
+
+	#257896 (Bug #38952) *
+	        P4Python now comes in a Perforce standardized directory
+	        structure: p4python-<year>.<release>.<patchlevel>[-BETA].
+	        Source and binary distributions created via 'python setup.py'
+	        will follow this naming scheme.
+
+	#257263 (Bug #37856) *
+	        Python 3.1 is now fully supported. It also has full support
+	        for Unicode-enabled Perforce Servers. This also means that
+	        P4.charset can be set to multibyte charsets such as UTF16.
+
+	#257099 (Bug #38766) * ***
+	    Errors and warnings are now instances of P4Message.
+	    This object has the additional methods generic(),
+	    severity() and (unique) msgid(), which makes parsing
+	    of error messages easier.
+	    P4.warnings and P4.errors still return the errors and
+	    warnings as strings for backwards compatibility.
+
+	#239278 (Bug #38210) *
+	    Added new SetTrack() and GetTrack() methods.
+	    For more details about server performance tracking see:
+	        http://kb.perforce.com/article/883
+
+Bugs fixed in 2010.2
+
+	#285704 (Bug #43213) *
+	        The connect() context would silently swallow exceptions
+	        thrown within the block. This means problems within the
+	        following code would get missed unless explicitly caught
+	        within the block:
+
+	        with p4.connect():
+	            # do something with p4
+	        # automatically disconnected
+
+	        This is now fixed.
+
+	    #287034 (Bug #43415) *
+	        Running 'print' on a file that started with '---' would
+	        crash Python. This is now fixed.
+	        There is still an oddity when p4.track = 1 and a user runs
+	        p4.run_print() on a file that only has lines starting with
+	        '--- '. In that case, the output of the print is lost.
+	        Disable tracking by setting p4.track = 0 (the default) will
+	        solve this problem.
+
+--------------------------------------------------------------------------
+
+New functionality in 2010.1
+
+	#235589 (Bug #35946) *
+	    Compatibility with Python 3. This change makes P4Python
+	    incompatible with Python 2.5 and prior, but retains
+	    compatibility with Python 2.6 (Python 2.7 also works
+	    but is unsupported).
+	    Python 3.1 is currently only experimental because of
+	    Unicode and 8-bit ASCII support. P4Python 2010.1 with
+	    Python 3.1 at the moment only supports 7-bit ASCII
+	    on non-Unicode servers and UTF8 on Unicode servers.
+
+	#231765 *
+	    Added new P4.server_unicode attribute that allows script
+	    writers to test whether or not a Perforce Server is in
+	    internationalized (unicode) mode.
+
+	    P4.server_case_insensitive() has been changed from a method
+	    to an attribute (that is, no brackets)
+
+	    P4.server_level, P4.server_unicode and
+	    P4.server_case_insensitive all will send a "info" command to
+	    the server upon invocation if no previous command was sent
+	    before. Previously, these commands would throw an exception
+	    instead.
+
+	#230480 *
+	    New read-only string attributes PATCHLEVEL and OS
+	    so that script writers can test the installation of P4Python
+	    without having to parse the output of P4.identify()
+
+Bugs fixed in 2010.1
+
+	#242158 (Bug #38677) *
+	    P4.identify() now correctly report 'NTX64' for 64-bit
+	    builds on Windows.
+
+	#230649 (Bug #37434) *
+	    All keyword arguments passed in the constructor are now
+	    evaluated correctly.
+
+	#235706 *
+	    Support for P4.run_print() for more than one file.
+	    Previously, P4.run_print() would throw an exception
+	    when trying to print more than one file.
+
+	#235718 (Bug #37841) *
+	    P4.RAISE_ERROR has been renamed to P4.RAISE_ERRORS
+	    for consistency with P4Ruby. P4.RAISE_ERROR is still
+	    available for backwards compatibility.
+
+	#235730 (Bug #37186) *
+	    Under rare circumstances P4.run_filelog() would throw an
+	    "Index out of range" error for "fileSize" fields. This is
+	    now prevented.
+
+--------------------------------------------------------------------------
+
+New functionality in 2009.2
+
+	#214490 (Bug #35417 ) *
+	    New P4.server_case_sensitive() method enables scripts to
+	    detect whether the server is case-sensitive. Can be called
+	    only after a command has been issued to the server.
+
+	#214611 (Bug #032917) *
+	    Throw a P4Exception if user attempts to change the port after
+	    a connection is established.
+
+	#215413 (Bug #31789) *
+	    Throw an exception if a user tries to set a charset wider
+	    than one byte. Previously, all commands subsequent to
+	    setting a multi-byte charset returned empty strings.
+
+Bugs fixed in 2009.2
+
+	#227423 (Bug #37143) *
+	    The build script removed the release notes when invoked. Fixed.
+
+	#214614 (Bug #34866) *
+	    The P4.connected() method now correctly resets the flag when
+	    detecting a dropped connection.
+
+	#215406 *
+	    P4.__enter__() now correctly returns self, which permits the
+	    following idiom to work correctly:
+
+	    with p4.connect() as p:
+	    # use p here as an alias
+
+	#209643 (Bug #36223) *
+	    P4Python now builds with the latest API on Windows using
+	    Visual Studio 2008.
+	    Previously, the build failed because of a link error.
+
+	#222723 (Bug #36558) *
+	    The Map class removed '-' and '+' from the path if the
+	    form Map.insert(lhs, rhs) was used, even if these characters
+	    did not appear at the beginning of the path.
+	    Now dashes and pluses are preserved within the path.
+
+--------------------------------------------------------------------------
+
+New functionality in 2009.1
+
+	#191476 (Bug #26731) *
+	    Support for the Python "with" statement.
+
+	    P4.connect() now returns a Contect Management object that can
+	    be used in a "with" statement with a block. When the block is
+	    finished, the connection is automatically disconnected:
+
+	    import P4
+	    p4 = P4.P4()
+	    with p4.connect():
+	        # execute statements here
+	        # p4 is now disconnected
+
+	    Also, there are two new methods, P4.while_tagged() and
+	    P4.at_exception_level() that, when used in a "with" statement,
+	    set the tagged mode and exception_level for the block and then
+	    reset it back to the original state. For example:
+
+	    with p4.at_exception_level(P4.RAISE_ERROR): # no exceptions
+	                                                # for warnings
+	      p4.run_sync("//depot/main/...")
+
+Bugs fixed in 2009.1
+
+	#192108 (Bug #32920) *
+	    P4Python now correctly parsse jobs when the jobspec contains
+	    fields with names ending in numbers.
+
+	#191458 (Bug #32834) *
+	   Charset can now be reset to the empty string ''.
+
+--------------------------------------------------------------------------
+
+New functionality in 2008.2
+
+	#164805 (Bug #30704) *
+	    P4Python now builds under CYGWIN.
+
+	#163103 (Bug #30363) *
+	#166832 *
+	    A new class P4.Map has been defined in P4Python
+	    that allows users to create, and work with, Perforce mappings
+	    without requiring a connection to a server. Methods in the
+	    P4.Map class are:
+
+	    P4.Map()           Constructor.
+
+	    P4.Map.join()      Class method. Joins two maps to create a
+	                       third.
+
+	    P4.Map.clear()     Empties the map
+
+	    P4.Map.count()     Returns the number of entries in the map
+
+	    P4.Map.is_empty()  Returns True if the map is empty
+
+	    P4.Map.insert()    Adds new entries to the map
+
+	    P4.Map.translate()  Translates a string through the map
+
+	    P4.Map.includes()  Returns True if the supplied string is
+	                       visible through the map
+
+	    P4.Map.reverse()   Swap left and right sides of the mapping
+
+	    P4.Map.lhs()       Returns the left-hand-side of the map
+
+	    P4.Map.rhs()       Returns the right-hand-side of the map
+
+	    P4.Map.as_array()  Returns the map as an array
+
+Bugs fixed in 2008.2
+
+	#176515 (Bug #31367) *
+	    Using P4.run_print() in untagged mode throws an exception:
+	      IndexError: list index out of range
+	    This is now fixed. P4.run_print() can be used both in tagged and
+	    untagged mode.
+
+	#157855 (Bug #29933) *
+	    P4Python now correctly loads the value of P4CHARSET from the
+	    environment.
+
+--------------------------------------------------------------------------
+
+New functionality in 2008.1
+
+	#157600 *
+	    Added support for P4.run_resolve(). The default for
+	    run_resolve() is now to accept the merge hint provided by the
+	    server unless the hint is "e", indicating a conflict. In this
+	    case, run_resolve() will skip the resolve.
+
+	    P4.run_resolve() can also accept a "resolver" keyword argument,
+	    which should point to an instance of a subclass of P4.Resolver.
+	    The subclass should overwrite the method
+	    P4.Resolver.resolve(self, mergeData) and return a string
+	    indicating how the resolve should proceed.
+
+	    To get the old behaviour of "resolve", run the
+	    command P4.run("resolve"). You will need to set P4.input to the
+	    correct response in this case.
+
+	#152008 (Bug #28761) *
+	    Added support for Python 2.4.
+
+	#152362 (Bug #29024) *
+	    The 'P4.env( var )' method has been added to the
+	    P4 class. This instance method enables the caller to
+	    interrogate the Perforce environment, including reading Perforce
+	    variables from P4CONFIG files and, on Windows, the registry.
+	    P4.cwd now loads any P4CONFIG file settings that are appropriate
+	    to the new working directory.
+
+	#153547 (Bug #29310) *
+	    P4Python now supports Mac OSX 10.5.
+
+Bugs fixed in 2008.1
+
+	#175062 (Bug #31637) *
+	    P4Python sometimes incorrectly decrements the reference count
+	    of None when calling p4.run_filelog(). In certain
+	    circumstances, this could cause Python to deallocate None,
+	    causing a fatal error. This problem has been fixed.
+
+	#168966 (Bug #31180) *
+	    P4Python did not release its output variable correctly. This
+	    caused a crash on 64 bit versions of Python when the P4 object
+	    went out of scope. This is now fixed.
+
+	#166644 (Bug #30723) *
+	    P4Python connections were not being correctly cleaned up when
+	    they were discarded due to a reference counting problem.
+	    This problem has been corrected.
+
+	#161025 (Bug #30076) *
+	    Fixed a serious memory leak problem in P4Python. Basically,
+	    all results returned from P4.run() had too many reference
+	    counts, which prevented the Python garbage collector from
+	    being able to clean up these objects. Now P4Python is memory
+	    neutral, as can be checked with the debug version of Python,
+	    which shows the total number of reference counts.
+
+	#157844 (Bug #28653) *
+	    Fixed an error with p4.run_filelog() when tagged output is
+	    off. The "df" variable is now correctly initialized on
+	    line 333 of P4.py.
+
+	#156847 (Bug #28770) *
+	    Calling print to retrieve the contents of a file no longer
+	    truncates content.
+
+	#155969 (Bug #29703) *
+	    When trying to create an illegal field in a Spec, P4Python
+	    would try to raise a P4Error, only to fail because the wrong
+	    number of arguments was provided to the Exception. This has
+	    been fixed.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2007.3
+
+	#149927 (Bug #28703) *
+	    The presence of deleted revisions in a file's history could
+	    lead to P4Python throwing an error message. This occurred
+	    because deleted revisions do not have 'digest' or 'fileSize'
+	    fields. This problem has been corrected.
+
+	#146116 (Bug #28260) *
+	    The P4Python test harness, p4test.py, was omitted from the
+	    source distribution in error. This problem has been corrected.
+
+	#146024 (Bug #28077) *
+	    P4.Revision doesn't have a depot_file, or depotFile attribute
+	    as its counterparts in P4Perl and P4Ruby do. This is now fixed.
