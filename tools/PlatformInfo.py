@@ -105,7 +105,7 @@ class PlatformInfo:
                     release = "109"
                     self.extra_link_args += ["-framework", "Carbon"]
 
-                os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
+                os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.12"
 
                 arch = self.architecture(unameOut[4])
 

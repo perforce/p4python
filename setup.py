@@ -57,13 +57,13 @@ global_dist_directory = "p4python-"
 doclines = __doc__.split("\n")
 
 NAME = "p4python"
-VERSION = "2019.1"
+VERSION = "2020.1"
 PY_MODULES = ["P4"]
 P4_API_DIR = "p4api"
 DESCRIPTION = doclines[0]
 AUTHOR = "Perforce Software Inc"
 MAINTAINER = "Perforce Software Inc"
-AUTHOR_EMAIL = "nmorse@perforce.com"
+AUTHOR_EMAIL = "support@perforce.com"
 MAINTAINER_EMAIL = "support@perforce.com"
 LICENSE = "LICENSE.txt"
 URL = "http://www.perforce.com"
@@ -316,8 +316,8 @@ class p4build_ext(build_ext_module):
         rversion = int(apiVersion.release_version)
         global_dist_directory += releaseVersion.getDistVersion()
 
-        if ryear < 2019:
-            print("API Release %s.%s not supported by p4python, Minimum API requirement is 2019.1" % (ryear, rversion))
+        if ryear < 2020:
+            print("API Release %s.%s not supported by p4python, Minimum API requirement is 2020.1" % (ryear, rversion))
             print("Please download a more recent API release from the Perforce ftp site.")
             exit(1)
         else:

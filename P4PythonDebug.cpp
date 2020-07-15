@@ -29,6 +29,7 @@ $Id$
 #include <Python.h>
 #include <iostream>
 
+#include <stdhdrs.h>
 #include <debug.h>
 
 #include "P4PythonDebug.h"

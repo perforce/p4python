@@ -6,7 +6,7 @@ if len(pathToBuild) > 0:
         versionString = "%d.%d" % (sys.version_info[0], sys.version_info[1])
         for i in pathToBuild:
                 if versionString in i:
-                        sys.path.insert(0, i)
+                        sys.path.insert(0,  os.path.realpath(i))
 
 pathToBuild = glob.glob('/tmp/p4python*')
 if len(pathToBuild) > 0:
@@ -19,22 +19,22 @@ def run_trigger(specdef, formname, formfile):
     p4 = P4.P4()
     try:
         p4.define_spec('job', specdef)
-        
+
         with open(formfile) as f:
             content = f.read()
-    
+
         parsed = p4.parse_job(content)
         parsed._status = "suspended"
-        
+
         content = p4.format_job(parsed)
-        
+
         with open(formfile, "w") as f:
             f.write(content)
-        
+
     except Exception as e:
         print("Received exception : {}".format(e))
         sys.exit(1)
-    
+
     sys.exit(0)
 
 
@@ -47,4 +47,3 @@ if __name__ == '__main__':
     formname = sys.argv[2]
     formfile = sys.argv[3]
     run_trigger(specdef, formname, formfile)
-

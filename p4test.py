@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import glob, sys, time, stat, platform
+import glob, sys, time, stat, platform, os
 pattern = 'build/lib*'
 architecture = platform.architecture()
 if 'Windows' in architecture[1]:
@@ -16,7 +16,7 @@ if len(pathToBuild) > 0:
     versionString = "%d.%d" % (sys.version_info[0], sys.version_info[1])
     for i in pathToBuild:
         if versionString in i:
-            sys.path.insert(0, i)
+            sys.path.insert(0, os.path.realpath(i))
 
 import P4
 from P4 import P4Exception
@@ -24,7 +24,7 @@ import P4API
 import unittest, os, types, shutil, stat
 from subprocess import Popen, PIPE
 import sys
-import os, os.path
+import os.path
 import re
 import platform
 
@@ -53,7 +53,7 @@ class TestP4Python(unittest.TestCase):
     def tearDown(self):
         if self.p4.connected():
             self.p4.disconnect()
-        time.sleep( 5 )
+        time.sleep( 1 )
         self.cleanupTestTree()
 
     def setDirectories(self):
@@ -76,7 +76,7 @@ class TestP4Python(unittest.TestCase):
 
     def getServerPatchLevel(self, info):
         c = re.compile("[^/]*/[^/]*/[^/]*/([^/]*)\s\(\d+/\d+/\d+\)")
-        
+
         serverVersion = info[0]["serverVersion"]
         m = c.match(serverVersion)
         if m:
@@ -576,10 +576,10 @@ class TestP4(TestP4Python):
         # test P4Map.translate and P4Map.translate_array
         map.clear()
         map = P4.Map(['//depot/a/... a/...', '&//depot/a/... b/...'])
-        self.assertEqual( map.translate("//depot/a/foo"), "a/foo", "P4Map.translate not handled correctly") 
-        self.assertEqual( map.translate("a/foo", 0), "//depot/a/foo", "P4Map.translate not handled correctly") 
-        self.assertEqual( map.translate_array("//depot/a/foo"), ["b/foo", "a/foo"], "P4Map.translate not handled correctly") 
-        
+        self.assertEqual( map.translate("//depot/a/foo"), "a/foo", "P4Map.translate not handled correctly")
+        self.assertEqual( map.translate("a/foo", 0), "//depot/a/foo", "P4Map.translate not handled correctly")
+        self.assertEqual( map.translate_array("//depot/a/foo"), ["b/foo", "a/foo"], "P4Map.translate not handled correctly")
+
     def testThreads( self ):
             import threading
 
@@ -596,7 +596,8 @@ class TestP4(TestP4Python):
 
             threads = []
             for i in range(1,10):
-                    threads.append( AsyncInfo(self.port) )
+                    self.ensureDirectory(self.server_root+"/"+ str(i))
+                    threads.append( AsyncInfo("rsh:%s -r \"%s\" -L log -vserver=3 -i" % ( self.p4d, self.server_root+"/"+ str(i))))
             for thread in threads:
                     thread.start()
             for thread in threads:
@@ -912,7 +913,7 @@ class TestP4(TestP4Python):
         try:
             reparsed = p4_2.parse_spec(spec_name, spec_string)
         except P4.P4Exception as e:
-            self.fail("Spec '{0}' failed with {1}".format(spec_name, e))    
+            self.fail("Spec '{0}' failed with {1}".format(spec_name, e))
         del p4_2
 
     def testAllSpecs( self ):
@@ -1001,7 +1002,7 @@ class TestP4(TestP4Python):
                 major = int(match.group(1))
                 if major >= 16: # macos Sierra or higher
                     self.p4.encoding = 'utf-8'
-            
+
             filename = 'öäüÖÄÜß.txt'
             fname = os.path.join(testAbsoluteDir, filename)
             encodedName = fname.encode(self.p4.encoding)
@@ -1064,7 +1065,7 @@ class TestP4(TestP4Python):
             from StringIO import StringIO
         except ImportError:
             from io import StringIO
-        
+
         self.p4.connect()
 
         # set up a String stream for log testing
@@ -1072,43 +1073,43 @@ class TestP4(TestP4Python):
         handler = logging.StreamHandler(stream)
         format = logging.Formatter('%(levelname)s:%(message)s')
         handler.formatter = format
-        
+
         self.p4.logger = logging.getLogger('TestP4Logger')
         self.p4.logger.setLevel(logging.INFO)
         self.p4.logger.addHandler(handler)
-        
+
         self.assertEqual(self.p4.debug, 0, "Debug is not 0")
 
         # Simple log test with no debug output
         self.p4.run_info()
         self.assertEqual(stream.getvalue(), "INFO:p4 info\n", "Logging stream contains '{0}'".format(stream.getvalue()))
-        
+
         stream.truncate(0)
         stream.seek(0) # not necessary in Python2, but required for Python3
-        
+
         # Now with an exception, should raise a WARNING
-        
+
         self.assertRaises(P4Exception, lambda : self.p4.run_files('//depot/foobar'))
-        
-        self.assertEqual(stream.getvalue(), 
+
+        self.assertEqual(stream.getvalue(),
                          "INFO:p4 files //depot/foobar\n"
-                         "WARNING://depot/foobar - no such file(s).\n", 
+                         "WARNING://depot/foobar - no such file(s).\n",
                          "Unexpected {0}".format(stream.getvalue()))
-        
+
         stream.truncate(0)
         stream.seek(0) # not necessary in Python2, but required for Python3
-       
+
         # Now without an exception, but still with WARNING output - and now with DEBUG output as well
-        
+
         self.p4.logger.setLevel(logging.DEBUG)
         self.p4.run_files('//depot/foobar', exception_level=0)
 
-        self.assertEqual(stream.getvalue(), 
+        self.assertEqual(stream.getvalue(),
                          "INFO:p4 files //depot/foobar\n"
                          "WARNING://depot/foobar - no such file(s).\n"
-                         "DEBUG:[]\n", 
+                         "DEBUG:[]\n",
                          "Unexpected {0}".format(stream.getvalue()))
-        
+
         self.p4.logger = None
         self.assertEqual(self.p4.logger, None, "Logger not reset correctly")
 
@@ -1178,11 +1179,11 @@ class TestP4(TestP4Python):
         # link it from the trigger table (sys.executable)
         # update the jobspec
         # then try it out with a job
-        
+
         self.assertTrue(os.path.exists("job_trigger.py"), "Can't find job_trigger.py")
         with open("job_trigger.py") as f:
             triggerCode = f.read()
-        
+
         self.p4.connect()
         self._setClient()
 
@@ -1191,33 +1192,33 @@ class TestP4(TestP4Python):
             f.write(triggerCode)
         self.p4.run_add(triggerPath)
         self.p4.run_submit("-d","Added trigger")
-        
+
         files = self.p4.run_files("//...")
         self.assertEqual(len(files), 1, "Not exactly one file stored")
         self.assertEqual(files[0]["depotFile"], "//depot/job_trigger.py", "File not found where expected")
-        
+
         jobTrigger = 'jobtest form-out job ' \
                      '"{0} %//depot/job_trigger.py% %specdef% %formname% %formfile%"'.format(sys.executable)
-        
+
         triggers = self.p4.fetch_triggers()
         triggers._triggers = [ jobTrigger ]
         self.p4.save_triggers(triggers)
-        
+
         # need to bounce connecting to reload trigger table
         self.p4.disconnect()
         self.p4.connect()
-                
-        jobspec = self.p4.fetch_jobspec()        
+
+        jobspec = self.p4.fetch_jobspec()
         jobspec._fields.append("110 Project word 32 optional")
         self.p4.save_jobspec(jobspec)
-        
+
         job = self.p4.fetch_job("myjob")
-        
+
         self.assertEqual(job._status, "suspended", "Trigger did not change status to suspended")
         job._description = "Testing jobspec and job triggers"
         job._project = "NewProject"
         self.p4.save_job(job)
-        
+
         job = self.p4.fetch_job("myjob")
         self.assertEqual(job._job, "myjob", "Job name not correct")
         self.assertEqual(job._project, "NewProject", "Job project name not set")
@@ -1227,14 +1228,14 @@ class TestP4(TestP4Python):
         # save protection table
         # reload protection table
         # verify it works
-        
+
         protectionView = ["## First line",
                           "write user * * //... ## standard",
                           "admin user tom 127.0.0.1 //... ## special admin user"
                           "## Super entry following",
                           "super user {0} * //... ## standard super user".format(self.p4.user)
                          ]
-        
+
         self.p4.connect()
         current_pwd = self.server_root
 
@@ -1244,55 +1245,54 @@ class TestP4(TestP4Python):
                 protect = self.p4.fetch_protect()
                 protect._protections = protectionView
                 self.p4.save_protect(protect)
-    
+
                 protect = self.p4.fetch_protect()
-                
+
                 self.assertEqual(protectionView, protect._protections, "Views are not identical")
             else:
                 print("\n*** Please upgrade to at least 2016.1 Patch 2 (1398982) ***")
-    
+
     def testStringAsListOfOne( self ):
         self.p4.connect()
         client = self.p4.fetch_client()
         altRoots = [ "/tmp/foo", "/tmp/bar" ]
         client._altroots = altRoots
         self.p4.save_client(client)
-        
+
         client = self.p4.fetch_client()
         self.assertEqual(client._altroots, altRoots, "AltRoots are not identical for list of two")
-        
+
         altRoots = "/tmp/foo"
         client._altroots = altRoots
         self.p4.save_client(client)
-        
+
         client = self.p4.fetch_client()
         self.assertEqual(client._altRoots, [ altRoots ], "AltRoots are not identical for string")
-        
+
         altRoots = ""
         client._altroots = altRoots
         self.p4.save_client(client)
-        
+
         client = self.p4.fetch_client()
         self.assertEqual( ("AltRoots" not in client), True , "AltRoots have not been deleted")
-    
+
     def run_saved_context(self):
         with self.p4.saved_context(cwd='/tmp'):
             self.p4.run_files('...') # must fail
-    
+
     def run_files(self):
         self.p4.run_files('...', cwd='/tmp')
-    
+
     def testContextHandlers( self ):
         self.p4.connect()
         cwd = self.p4.cwd
-        self.assertRaises(P4Exception, self.run_saved_context)            
+        self.assertRaises(P4Exception, self.run_saved_context)
         self.assertEqual(self.p4.cwd, cwd, "Context not successfully restored in with statement")
-        
+
         self.assertRaises(P4Exception, self.run_files)
-            
-        
+
+
         self.assertEqual(self.p4.cwd, cwd, "Context not successfully restored in run method")
-    
+
 if __name__ == '__main__':
     unittest.main()
-

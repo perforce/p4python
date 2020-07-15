@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#47 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#49 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -262,6 +262,7 @@ struct specdata {
 	"DefaultBranch;code:1007;len:32;;"
 	"MirroredFrom;code:1008;len:32;;"
 	"Options;code:1009;type:select;len:10;val:lfs/nolfs;;"
+	"GconnMirrorServerId;code:1010;len:32;;"
     },
     {
 	"server",
@@ -277,6 +278,7 @@ struct specdata {
 	"Description;code:757;type:text;len:128;;"
 	"User;code:761;type:line;len:64;;"
 	"AllowedAddresses;code:763;type:wlist;len:64;;"
+	"UpdateCachedRepos;code:766;type:wlist;len:64;;"
 	"ClientDataFilter;code:758;type:wlist;len:64;;"
 	"RevisionDataFilter;code:759;type:wlist;len:64;;"
 	"ArchiveDataFilter;code:760;type:wlist;len:64;;"
@@ -290,6 +292,7 @@ struct specdata {
 	"Values;code:354;type:wlist;words:2;;"
 	"Presets;code:355;type:wlist;words:2;;"
 	"Openable;code:362;type:wlist;words:2;;"
+    "Maxwords;code:361;type:wlist;words:2;;"
 	"Comments;code:356;type:text;;"
     },
     {
@@ -306,9 +309,9 @@ struct specdata {
 	    "allsubmit/ownersubmit,unlocked/locked,"
 	    "toparent/notoparent,fromparent/nofromparent,"
 	    "mergedown/mergeany;open:isolate;;"
-	"Paths;code:710;rq;type:wlist;words:2;maxwords:3;len:64;open:propagate;;"
-	"Remapped;code:711;type:wlist;words:2;len:64;open:propagate;;"
-	"Ignored;code:712;type:wlist;words:1;len:64;open:propagate;;"
+	"Paths;code:710;rq;type:wlist;words:2;maxwords:3;len:64;open:propagate;fmt:C;;"
+	"Remapped;code:711;type:wlist;words:2;len:64;open:propagate;fmt:C;;"
+	"Ignored;code:712;type:wlist;words:1;len:64;open:propagate;fmt:C;;"
 	"View;code:713;type:wlist;words:2;len:64;;"
 	"ChangeView;code:714;type:llist;ro;len:64;;"
     },
