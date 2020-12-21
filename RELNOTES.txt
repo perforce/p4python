@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2020.1
+                             Version 2020.1 Patch 1
 
 Introduction
 
@@ -374,6 +374,15 @@ Key to symbols used in change notes below.
 	  * -- requires new P4Python
 	 ** -- requires new p4d server program
 	*** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionality in 2020.1 Patch 1
+
+	(Job #104856) * ***
+      Windows and Mac builds have updated version of OpenSSL(1.1.1i),
+      to address possible vulnerability: CVE-2015-0288.
+      Linux builds are not affected.
 
 --------------------------------------------------------------------------
 
