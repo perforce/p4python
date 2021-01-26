@@ -595,7 +595,10 @@ class P4(P4API.P4Adapter):
         if hasattr(self,"encoding") and self.encoding and not self.encoding == 'raw':
             result = []
             for s in flatArgs:
-                result.append( s.encode(self.encoding) )
+                if isinstance(s, str):
+                    result.append( s.encode(self.encoding) )
+                else:
+                    result.append(s)
             flatArgs = result
         
         if self.logger:
