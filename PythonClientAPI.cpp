@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#77 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#78 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -619,7 +619,7 @@ PyObject * PythonClientAPI::Convert(const char * charset, PyObject * content)
 	const char * contentAsUTF8 = PyBytes_AS_STRING(bytes);
 
 	int retlen = 0;
-	const char * converted = cvt->FastCvt(contentAsUTF8, strlen(contentAsUTF8), &retlen);
+	const char * converted = cvt->FastCvt(contentAsUTF8, (int)strlen(contentAsUTF8), &retlen);
 	Py_DECREF( bytes ); // we do not need this object anymore
 
 	if (converted == NULL) {

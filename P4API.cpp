@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/P4API.cpp#62 $
+ * $Id: //depot/main/p4-python/P4API.cpp#63 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -237,7 +237,7 @@ static PyObject * P4Adapter_run(P4Adapter * self, PyObject * args)
     // the other hack is that the API expects (char * const *), but this cannot be stored
     // a std::vector<>, because it cannot exchange pointers
     
-    return self->clientAPI->Run(GetPythonString(cmd), argv.size(), 
+    return self->clientAPI->Run(GetPythonString(cmd), (int)argv.size(), 
         (argv.size() > 0) ? (char * const *) &argv[0] : NULL );
 }
 

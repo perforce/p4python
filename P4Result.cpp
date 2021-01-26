@@ -24,7 +24,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/P4Result.cpp#19 $
+$Id: //depot/main/p4-python/P4Result.cpp#21 $
 *******************************************************************************/
 
 #include <Python.h>
@@ -66,20 +66,25 @@ P4Result::~P4Result()
 {
     // reduce references to Python objects to avoid memory leaks
     
-    if (output) 
+    if (output) {
         Py_DECREF(output);
-    
-    if (warnings) 
+    }
+
+    if (warnings) {
         Py_DECREF(warnings);
-    
-    if (errors)
+    }
+
+    if (errors) {
         Py_DECREF(errors);
+    }
 
-    if (messages)
+    if (messages) {
         Py_DECREF(messages);
+    }
 
-    if (track)
-	Py_DECREF(track);
+    if (track) {
+        Py_DECREF(track);
+    }
 }
 
 PyObject * P4Result::GetOutput()
@@ -92,24 +97,29 @@ PyObject * P4Result::GetOutput()
 void
 P4Result::Reset()
 {
-    if (output)
+    if (output) {
         Py_DECREF(output);
+    }
     output = PyList_New(0);
     
-    if (warnings) 
+    if (warnings) {
         Py_DECREF(warnings);
+    }
     warnings = PyList_New(0);
     
-    if (errors)
+    if (errors) {
         Py_DECREF(errors);
+    }
     errors = PyList_New(0);
     
-    if (messages)
+    if (messages) {
         Py_DECREF(messages);
+    }
     messages = PyList_New(0);
 
-    if (track)
-	Py_DECREF(track);
+    if (track) {
+        Py_DECREF(track);
+    }
     track = PyList_New(0);
 
     if (output == NULL
@@ -154,8 +164,9 @@ int P4Result::AddTrack( PyObject * t )
 
 void P4Result::ClearTrack()
 {
-    if (track)
-	Py_DECREF(track);
+    if (track) {
+        Py_DECREF(track);
+    }
     track = PyList_New(0);
 }
 
@@ -221,13 +232,13 @@ P4Result::AddError( Error *e )
 int
 P4Result::ErrorCount()
 {
-    return PyList_Size( errors );
+    return (int)PyList_Size( errors );
 }
 
 int
 P4Result::WarningCount()
 {
-    return PyList_Size( warnings );
+    return (int)PyList_Size( warnings );
 }
 
 void
@@ -246,7 +257,7 @@ P4Result::FmtWarnings( StrBuf &buf )
 int
 P4Result::Length( PyObject * list )
 {
-    return PyList_Size( list );
+    return (int)PyList_Size( list );
 }
 
 void

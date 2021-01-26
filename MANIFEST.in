@@ -5,5 +5,3 @@ include Version
 include p4test.py
 include job_trigger.py
 include tools/*.py
-
-global-exclude *.pyc

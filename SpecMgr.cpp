@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#49 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#51 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -570,10 +570,10 @@ void SpecMgr::SplitKey( const StrPtr *key, StrBuf &base, StrBuf &index ) {
     base = *key;
     index = "";
     for( size_t i = key->Length(); i; i-- ) {
-	char prev = (*key)[i - 1];
+	char prev = (*key)[(p4size_t)i - 1];
 	if( !isdigit(prev) && prev != ',' ) {
-	    base.Set(key->Text(), i);
-	    index.Set(key->Text() + i);
+	    base.Set(key->Text(), (p4size_t)i);
+	    index.Set(key->Text() + (p4size_t)i);
 	    break;
 	}
     }
@@ -659,7 +659,7 @@ void SpecMgr::InsertItem( PyObject * dict, const StrPtr *var, const StrPtr *val 
 
     for( const char *c = 0; (c = index.Contains(comma)); ) {
 	StrBuf level;
-	level.Set(index.Text(), c - index.Text());
+	level.Set(index.Text(), (int)(c - index.Text()));
 	index.Set(c + 1);
 
 	// Found another level so we need to get/create a nested array
@@ -703,7 +703,7 @@ void SpecMgr::InsertItem( PyObject * dict, const StrPtr *var, const StrPtr *val 
     }
 
     buf = "... ";
-    buf << PyList_Size(list) << "] = " << val->Text();
+    buf << (int)PyList_Size(list) << "] = " << val->Text();
 
     debug->debug ( P4PYDBG_DATA, buf.Text() );
 
