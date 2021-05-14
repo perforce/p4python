@@ -31,9 +31,12 @@ jobs:
     - name: Get p4api
       run: |
         mkdir -p $bindir
-        dir  $bindir
-        dir ..
-        dir 
+        echo "bindir ls:"
+        ls  $bindir
+        echo ".. ls:"
+        ls ..
+        echo ". ls:"
+        ls 
         pwd
         cd .. && wget ftp://ftp.perforce.com/perforce/$codeline/bin.linux26x86_64/$p4api -O $bindir/$p4api
         
@@ -43,9 +46,9 @@ jobs:
     - name: Build P4Python
       run: |
         docker pull $docker
-        docker run \
-        -v $mount \        
-        $docker /work/p4-python/linux_build/build-wheels.sh "27 36 37 38 39"
+        ls $bindir
+        ls ${{ github.workspace }}/..
+        echo docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh "27 36 37 38 39"
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
