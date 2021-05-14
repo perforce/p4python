@@ -30,7 +30,7 @@ jobs:
 
     - name: Get p4api
       run: |
-        mkdir -p ${{ p4apiDir }}
+        mkdir -p ${{ bindir }}
         dir  ${{ bindir }}
         dir ..
         dir 
