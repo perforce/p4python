@@ -48,6 +48,7 @@ jobs:
         docker pull $docker
         ls $bindir
         ls ${{ github.workspace }}/..
+        ln -s ${{ github.workspace }}/../p4python ${{ github.workspace }}/../p4-python
         echo docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh \"27 36 37 38 39\"
         dir  $bindir
 
