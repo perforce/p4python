@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#51 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#52 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -253,16 +253,20 @@ struct specdata {
     },
     {
 	"repo",
-	"Repo;code:1001;rq;ro;len:128;;"
-	"Owner;code:1002;len:32;;"
+	"Repo;code:1001;rq;ro;fmt:L;len:128;;"
+	"Owner;code:1002;fmt:R;len:32;;"
 	"Created;code:1003;type:date;ro;fmt:L;len:20;;"
-	"Pushed;code:1004;type:date;ro;fmt:L;len:20;;"
-	"ForkedFrom;code:1005;ro;len:128;;"
+	"Pushed;code:1004;type:date;ro;fmt:R;len:20;;"
+	"ForkedFrom;code:1005;ro;fmt:L;len:128;;"
 	"Description;code:1006;type:text;len:128;;"
-	"DefaultBranch;code:1007;len:32;;"
-	"MirroredFrom;code:1008;len:32;;"
+	"DefaultBranch;code:1007;fmt:L;len:32;;"
+	"MirroredFrom;code:1008;fmt:R;len:32;;"
 	"Options;code:1009;type:select;len:10;val:lfs/nolfs;;"
-	"GconnMirrorServerId;code:1010;len:32;;"
+	"GconnMirrorServerId;code:1010;fmt:L;len:32;;"
+	"GconnMirrorSecretToken;code:NNN;len:36;;"
+	"GconnMirrorStatus;code:NNN;len:8;;"
+	"GconnMirrorExcludedBranches;code:NNN;len:256;;"
+	"GconnMirrorHideFetchUrl;code:NNN;len:5;;"
     },
     {
 	"server",
@@ -309,6 +313,8 @@ struct specdata {
 	    "allsubmit/ownersubmit,unlocked/locked,"
 	    "toparent/notoparent,fromparent/nofromparent,"
 	    "mergedown/mergeany;open:isolate;;"
+	"ParentView;code:NNN;rq;open:isolate;"
+	"pre:inherit;val:noinherit/inherit;;"
 	"Paths;code:710;rq;type:wlist;words:2;maxwords:3;len:64;open:propagate;fmt:C;;"
 	"Remapped;code:711;type:wlist;words:2;len:64;open:propagate;fmt:C;;"
 	"Ignored;code:712;type:wlist;words:1;len:64;open:propagate;fmt:C;;"

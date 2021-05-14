@@ -1283,7 +1283,7 @@ class TestP4(TestP4Python):
     def run_files(self):
         self.p4.run_files('...', cwd='/tmp')
 
-    def testContextHandlers( self ):
+    def testContextHandlers(self):
         self.p4.connect()
         cwd = self.p4.cwd
         self.assertRaises(P4Exception, self.run_saved_context)
@@ -1293,6 +1293,121 @@ class TestP4(TestP4Python):
 
 
         self.assertEqual(self.p4.cwd, cwd, "Context not successfully restored in run method")
+
+    def testStreamComments(self):
+        self.p4.connect()
+        specform = self.p4.run( "depot", "-o", "-t", "stream", "STREAM_TEST", tagged=False )[0]
+        d = self.p4.fetch_depot( "STREAM_TEST" )
+        d._type = 'stream'
+        self.p4.save_depot( d )
+
+        paths = ['## First comment',
+            'share ... ## Second comment',
+            '## Third comment']
+
+        s = self.p4.fetch_stream( '//STREAM_TEST/TEST' ) 
+        s._Paths = paths
+        s._description = 'Main line stream'
+        s._type = 'mainline'
+        self.p4.save_stream ( s )        
+        self.assertEqual(self.p4.fetch_stream( "//STREAM_TEST/TEST" )._Paths , ['## First comment', 'share ... ## Second comment', '## Third comment'] )
+
+    
+    def testEvilTwin(self):
+        self.p4.connect()                
+        self.p4.cwd = self.client_root
+        self.p4.client = "TestClient"
+        client = self.p4.fetch_client()
+        client._root = self.client_root
+        self.p4.save_client(client)
+
+        # add A1
+        # branch A→B
+        # move A1→A2
+        # readd A1
+        # merge A→B
+
+        ############################
+        # Prep dirs
+
+        dirA = os.path.join(client._root, "A")
+        dirB = os.path.join(client._root, "B")
+        os.mkdir(dirA)
+        pathA = os.path.join(dirA, "fileA")
+        pathA1 = os.path.join(dirA, "fileA1")
+
+        ############################
+        # Adding
+
+        fileA = open( pathA, "w" )  
+        fileA.write("original file")
+        fileA.close()
+        self.p4.run_add(pathA)
+        self.p4.run("submit", "-d", "adding fileA")
+
+        ############################
+        # Branching
+
+        branch_spec = self.p4.run("branch", "-o", "evil-twin-test")[0]
+        branch_spec._View = ['//depot/A/... //depot/B/...']
+        self.p4.save_branch(branch_spec)
+        self.p4.run("integ", "-b", "evil-twin-test")
+        self.p4.run("submit", "-d", "integrating")
+
+        ############################
+        # Moving
+
+        self.p4.run("edit", pathA)
+        self.p4.run("move", "-f", pathA, pathA1)
+        self.p4.run("submit", "-d", "moving")
+
+        ############################
+        # Re-adding origianl
+
+        fileA = open( pathA, "w" )           
+        fileA.write("Re-added A")
+        fileA.close()
+        self.p4.run("add", pathA)
+        self.p4.run("submit", "-d", "re-adding")
+
+        ############################
+        # Second merge
+
+        self.p4.run("merge", "-b", "evil-twin-test")
+
+        try:
+            self.p4.run("submit", "-d", "integrating")
+
+        except Exception as e:
+            error = str(e)
+            results = ''.join([i for i in error if not i.isdigit()])           
+            expected = "\t[Error]: \"Merges still pending -- use 'resolve' to merge files.\\nSubmit failed -- fix problems above then use 'p submit -c '.\""
+            
+            for item in results.split("\n"):
+                if "[Error]:" in item:
+                    result = item
+
+            self.assertEqual(result, expected)
+
+    def testLockedClientRemoval(self):
+
+        self.p4.connect()     
+
+        self.p4.client = "UnlockedClient"
+        unlockedClient = self.p4.fetch_client()
+        unlockedClient._root = self.client_root
+        unlockedClient._options = 'noallwrite noclobber nocompress unlocked nomodtime normdir'
+        self.p4.save_client(unlockedClient)       
+        with self.p4.temp_client("temp", "UnlockedClient"):
+            self.p4.run_info()
+
+        self.p4.client = "LockedClient"
+        lockedClient = self.p4.fetch_client()
+        lockedClient._root = self.client_root
+        lockedClient._options = 'noallwrite noclobber nocompress locked nomodtime normdir'
+        self.p4.save_client(lockedClient)       
+        with self.p4.temp_client("temp", "LockedClient"):
+            self.p4.run_info()
 
 if __name__ == '__main__':
     unittest.main()
