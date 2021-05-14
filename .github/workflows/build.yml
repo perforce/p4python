@@ -48,7 +48,7 @@ jobs:
         docker pull $docker
         ls $bindir
         ls ${{ github.workspace }}/..
-        echo docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh "27 36 37 38 39"
+        echo docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh \"27 36 37 38 39\"
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
