@@ -57,7 +57,7 @@ jobs:
 
 
         docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh ${{ matrix.pyver }}
-        mv ../p4-python/repair/p4python-*.whl $bindir/p4python-cp${{ matrix.pyver }}-manylinux2010_x86_64.whl
+        cp ../p4-python/repair/p4python-*.whl $bindir/p4python-cp${{ matrix.pyver }}-manylinux2010_x86_64.whl
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
