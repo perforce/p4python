@@ -1,0 +1,16 @@
+# These values identify the release and patchlevel represented by these sources.
+
+# RELEASE = 2010 2 main nightly ;
+#	'year' is the year of the release
+#	'Nth' is which release of the year (1 2 3)
+#	'special' is 'main' for mainline builds and 'beta' for beta builds.
+
+# PATCHLEVEL = 251229 ;
+#	Of the source.
+
+# SUPPDATE = 2010 06 17 ;
+#	Of the build.  The copyright date is derived from SUPPDATE.
+
+RELEASE = 2020 1 GITHUB-PREP-TEST_ONLY ;
+PATCHLEVEL = 0 ;
+SUPPDATE = 0000 00 00 ;
