@@ -17,6 +17,9 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pyver: [27, 36, 37, 38, 39]
     steps:
 
     - name: Checkout source code
@@ -53,7 +56,7 @@ jobs:
         ls ${{ github.workspace }}/..
 
 
-        docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh 36
+        docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh ${{ matrix.pyver }}
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
