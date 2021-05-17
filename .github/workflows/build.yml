@@ -34,13 +34,6 @@ jobs:
     - name: Get p4api
       run: |
         mkdir -p $bindir
-        echo "bindir ls:"
-        ls  $bindir
-        echo ".. ls:"
-        ls ..
-        echo ". ls:"
-        ls
-        pwd
         cd .. && wget ftp://ftp.perforce.com/perforce/$codeline/bin.linux26x86_64/$p4api -O $bindir/$p4api
 
     - name: Get p4 and p4d binary
@@ -49,22 +42,12 @@ jobs:
     - name: Build P4Python
       run: |
         docker pull $docker
-        ls $bindir
-
         chmod +x linux_build/build-wheels.sh
         cp -rf ../p4python ../p4-python
-        ls ${{ github.workspace }}/..
-
-
         docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh ${{ matrix.pyver }}
         cp ../p4-python/repair/p4python-*.whl ${{ github.workspace }}/p4python-cp${{ matrix.pyver }}-manylinux2010_x86_64.whl
 
-
     - uses: actions/upload-artifact@v2
       with:
-        name: non-production-p4python-cp${{ matrix.pyver }}
+        name: non-production-p4python-wheel-cp${{ matrix.pyver }}
         path: ${{ github.workspace }}/p4python-cp${{ matrix.pyver }}-manylinux2010_x86_64.whl
-
-    - name: dir_bindir
-      run: |
-        ls $bindir
