@@ -63,8 +63,8 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: non-production-p4python
-        path: $bindir/p4python-cp${{ matrix.pyver }}.tar
+        name: non-production-p4python-cp${{ matrix.pyver }}
+        path: ../p4-bin/bin.linux26x86_64/p4python-cp${{ matrix.pyver }}-manylinux2010_x86_64.whl
 
     - name: dir_bindir
       run: |
