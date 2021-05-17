@@ -5,8 +5,8 @@ env:
   docker:         "ppiorunski/p4php7:python-27.35.36.37.38.39-manylinux2010_x86_64-github"
   mount:          "${{ github.workspace }}/..:/work"
   bindir:         "${{ github.workspace }}/../p4-bin/binlinux26x86_64"
-  p4api:          "p4api-glibc2.3-openssl1.1.1.tgz"  
-  
+  p4api:          "p4api-glibc2.3-openssl1.1.1.tgz"
+
 on:
   push:
     branches: [ master ]
@@ -36,10 +36,10 @@ jobs:
         echo ".. ls:"
         ls ..
         echo ". ls:"
-        ls 
+        ls
         pwd
         cd .. && wget ftp://ftp.perforce.com/perforce/$codeline/bin.linux26x86_64/$p4api -O $bindir/$p4api
-        
+
     - name: Get p4 and p4d binary
       run: |
         wget ftp://ftp.perforce.com/perforce/$codeline/bin.linux26x86_64/p4d -O $bindir/p4d && chmod 775 $bindir/p4d
@@ -50,12 +50,11 @@ jobs:
 
         ln -s ${{ github.workspace }}/../p4python ${{ github.workspace }}/../p4-python
         ls ${{ github.workspace }}/..
-        
-        echo docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh \"27 36 37 38 39\"
+
+        docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh \"27 36 37 38 39\"
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
       with:
         name: non-production-p4python
         path: p4python
-
