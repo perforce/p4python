@@ -51,7 +51,8 @@ jobs:
         ln -s ${{ github.workspace }}/../p4python ${{ github.workspace }}/../p4-python
         ls ${{ github.workspace }}/..
 
-        docker run -v $mount $docker /work/p4-python/linux_build/build-wheels.sh \"27 36 37 38 39\"
+        docker run -v $mount $docker ls /work/
+        docker run -v $mount $docker /work/p4python/linux_build/build-wheels.sh \"27 36 37 38 39\"
         dir  $bindir
 
     - uses: actions/upload-artifact@v2
