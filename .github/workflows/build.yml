@@ -4,7 +4,7 @@ env:
   codeline:       "r21.1"
   docker:         "ppiorunski/p4php7:python-27.35.36.37.38.39-manylinux2010_x86_64-github"
   mount:          "${{ github.workspace }}/..:/work"
-  bindir:         "${{ github.workspace }}/../p4-bin/binlinux26x86_64"
+  bindir:         "${{ github.workspace }}/../p4-bin/bin.linux26x86_64"
   p4api:          "p4api-glibc2.3-openssl1.1.1.tgz"
 
 on:
