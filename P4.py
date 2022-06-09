@@ -590,6 +590,9 @@ class P4(P4API.P4Adapter):
             setattr(self, k, v)
                 
         flatArgs = self.__flatten(args)
+
+        if self.logger:
+            self.logger.info("p4 " + " ".join(flatArgs))
         
         # if encoding is set, translate to Bytes
         if hasattr(self,"encoding") and self.encoding and not self.encoding == 'raw':
@@ -600,9 +603,6 @@ class P4(P4API.P4Adapter):
                 else:
                     result.append(s)
             flatArgs = result
-        
-        if self.logger:
-            self.logger.info("p4 " + " ".join(flatArgs))
         
         try:
             result = P4API.P4Adapter.run(self, *flatArgs)
