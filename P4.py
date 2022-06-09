@@ -370,17 +370,20 @@ def processFilelog(h):
             if (not "how" in h) or (n >= len(h["how"]) or h["how"][n] == None):
                 continue
             else:
+                number_sign = '#'
+                if type(h["depotFile"]) == bytes:
+                    number_sign = b'#'
                 for m, how in enumerate( h[ "how" ][ n ] ):
                     file = h[ "file" ][ n ][ m ]
-                    srev = h[ "srev" ][ n ][ m ].lstrip('#')
-                    erev = h[ "erev" ][ n ][ m ].lstrip('#')
+                    srev = h[ "srev" ][ n ][ m ].lstrip(number_sign)
+                    erev = h[ "erev" ][ n ][ m ].lstrip(number_sign)
                     
-                    if srev == "none":
+                    if srev == "none" or srev == b"none":
                         srev = 0
                     else:
                         srev = int( srev )
                 
-                    if erev == "none":
+                    if erev == "none" or erev == b"none":
                         erev = 0
                     else:
                         erev = int( erev )
