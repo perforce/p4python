@@ -57,7 +57,7 @@ global_dist_directory = "p4python-"
 doclines = __doc__.split("\n")
 
 NAME = "p4python"
-VERSION = "2021.1"
+VERSION = "2022.1"
 PY_MODULES = ["P4"]
 P4_API_DIR = "p4api"
 DESCRIPTION = doclines[0]
@@ -273,7 +273,7 @@ class p4build_ext(build_ext_module):
                 self.ssl, ssl_ver = self.check_installed_ssl()  # return libpath or None
 
                 # we only support 1.0.2 or 1.1.1 using 2019.1 p4api
-                if not (("1.0.2" in ssl_ver) or ("1.1.1" in ssl_ver)):
+                if not (("1.0.2" in ssl_ver) or ("1.1.1" in ssl_ver) or ("3.0" in ssl_ver)):
                     self.ssl = ""
 
                 if not self.ssl:
@@ -317,7 +317,7 @@ class p4build_ext(build_ext_module):
         global_dist_directory += releaseVersion.getDistVersion()
 
         if ryear < 2021:
-            print("API Release %s.%s not supported by p4python, Minimum API requirement is 2021.1" % (ryear, rversion))
+            print("API Release %s.%s not supported by p4python, Minimum API requirement is 2022.1" % (ryear, rversion))
             print("Please download a more recent API release from the Perforce ftp site.")
             exit(1)
         else:

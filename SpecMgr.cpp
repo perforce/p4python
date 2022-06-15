@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#52 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#53 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -130,26 +130,9 @@ struct specdata {
 	"SpecMap;code:259;type:wlist;len:64;;"
     },
     {
-	"extension",
-	"ExtName;code:901;type:line;opt:once;len:64;;"
-	"ExtDescription;code:902;type:text;opt:once;len:128;;"
-	"ExtVersion;code:903;type:line;opt:once;len:32;;"
-	"ExtUUID;code:904;type:line;opt:once;len:36;;"
-	"ExtRev;code:905;type:word;opt:once;len:20;;"
-	"ExtMaxScriptTime;code:913;type:word;len:12;;"
-	"ExtMaxScriptMem;code:914;type:word;len:12;;"
-	"ExtAllowedGroups;code:915;type:wlist;len:32;opt:default;;"
-	"ExtEnabled;code:916;type:word;opt:default;len:12;;"
-	"ExtP4USER;code:917;type:word;opt:default;len:12;;"
-	"Name;code:906;type:line;opt:default;len:32;;"
-	"Owner;code:907;type:word;opt:default;len:36;;"
-	"Update;code:908;type:date;opt:always;fmt:L;len:20;;"
-	"Description;code:909;type:text;opt:required;len:128;;"
-	"ExtConfig;code:912;type:text;opt:required;len:256;;"
-    },
-    {
 	"group",
 	"Group;code:401;rq;ro;len:32;;"
+	"Description;code:NNN;type:text;fmt:L:len:128;;"
 	"MaxResults;code:402;type:word;len:12;;"
 	"MaxScanRows;code:403;type:word;len:12;;"
 	"MaxLockTime;code:407;type:word;len:12;;"
@@ -228,6 +211,7 @@ struct specdata {
 	"Users;code:459;len:8;;"
 	"Files;code:460;len:8;;"
 	"Repos;code:462;len:8;;"
+	"ExtraCapabilities;code:463;type:llist;len:512;;"
     },
     {
 	"protect",
@@ -296,7 +280,7 @@ struct specdata {
 	"Values;code:354;type:wlist;words:2;;"
 	"Presets;code:355;type:wlist;words:2;;"
 	"Openable;code:362;type:wlist;words:2;;"
-    "Maxwords;code:361;type:wlist;words:2;;"
+	"Maxwords;code:361;type:wlist;words:2;;"
 	"Comments;code:356;type:text;;"
     },
     {
@@ -315,6 +299,7 @@ struct specdata {
 	    "mergedown/mergeany;open:isolate;;"
 	"ParentView;code:NNN;rq;open:isolate;"
 	"pre:inherit;val:noinherit/inherit;;"
+	"Components;code:NNN;type:wlist;words:3;maxwords:4;len:64;open:propagate;fmt:C;;"
 	"Paths;code:710;rq;type:wlist;words:2;maxwords:3;len:64;open:propagate;fmt:C;;"
 	"Remapped;code:711;type:wlist;words:2;len:64;open:propagate;fmt:C;;"
 	"Ignored;code:712;type:wlist;words:1;len:64;open:propagate;fmt:C;;"

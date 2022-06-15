@@ -159,7 +159,7 @@ PythonSpecData::Comment( SpecElem *sd, int x, const char **wv, int nl, Error *e)
 	    Py_DECREF(content);
 	}
 	else { // append case
-	    ssize_t size = PyList_Size( list );
+	    Py_ssize_t size = PyList_Size( list );
 
 	    PyObject * content = PyList_GetItem(list, size - 1); // last element
 	    const char * contentStr = GetPythonString(content);

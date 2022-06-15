@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2021.1
+                             Version 2022.1
 
 Notice
   P4Python 2021.1 is the last release supporting python2.
@@ -33,7 +33,6 @@ Installing P4Python
   ftp://ftp.perforce.com/perforce.
 
   P4Python requires "Microsoft Visual C++ Redistributable":
-      Python 2.7 - VC++ 9
       Python 3.x - VC++ 14.
 
   Users on other platforms must build from source, as detailed below.
@@ -47,24 +46,16 @@ Installation using Linux binary packages
 
   Following packages are available:
 
-  CentOS 7
-      perforce-p4python
-      perforce-p4python3 -> perforce-p4python3-python3.6
-
-  Centos 8
-      perforce-p4python
-      perforce-p4python3 -> perforce-p4python3-python3.6
+  RHEL 8      
       perforce-p4python3-python3.8
+      perforce-p4python3-python3.9
 
-  Ubuntu 18.04
-      perforce-p4python
-      perforce-p4python3 -> perforce-p4python3-python3.6
+  Ubuntu 18.04      
       perforce-p4python3-python3.7
       perforce-p4python3-python3.8
 
-  Ubuntu 20.04
-      perforce-p4python
-      perforce-p4python3 -> perforce-p4python3-python3.8
+  Ubuntu 20.04      
+      perforce-p4python3-python3.8
       perforce-p4python3-python3.9
 
 --------------------------------------------------------------------------
@@ -74,27 +65,19 @@ Installation via pip
   P4Python can be installed via pip from 2015.1 onwards. Simply run
   the command
 
-    pip install p4python
+    python3 -m pip install p4python
 
   Note that previous versions of P4Python should be uninstalled first,
   since they were built using distutils and not setuptools (the installer
   will warn about this). Once installed via pip, future releases of
   P4Python can be installed by adding the upgrade option to pip
 
-    pip install --upgrade p4python
+    python3 -m pip install --upgrade p4python
 
-  P4Python is distributed as a binary wheel on Windows (32 and 64 bit) and
-  on Mac for 64 bit only.
-  Currently, binary wheels for Python 2.7, 3.6, 3.7, 3.8 and 3.9 will be supplied.
-
-  On Linux no binary wheel is available. Instead, pip will download the
-  source release and attempt to build P4Python locally. This requires
-  installation of:
-
-    python-dev
-    build-essential
-    openssl-dev (for SSL support)
-    and OpenSSL 1.0.2+ or 1.1.1+ with libraries installed.
+  P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9 and 3.10.
+  In order for the binary wheel to be used, the ABI tag needs to match.
+  This often requires updated pip, to do so issue:
+    python3 -m pip install --upgrade pip
 
 --------------------------------------------------------------------------
 
@@ -152,25 +135,25 @@ Building P4Python from Source
 
   4. To build P4Python, run the following command:
 
-     python setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path>
+     python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path>
 
      Note: in order to reinstall cleanly P4Python, remove the
            directory named "build".
 
   5. To test your P4Python build, run the following command:
 
-     python p4test.py
+     python3 p4test.py
 
      Note: this test harness requires the Perforce server executable
            p4d 17.1 or better to be installed and in the PATH.
 
   6. To install P4Python, run the following command:
 
-     python setup.py install
+     python3 setup.py install
 
      if this doesn't work, you may need to both build and install in the same incantation:
 
-     python setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path> --install
+     python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path> install
 
      Note: on Unix/Mac platforms, the installation must be performed
            as the root user, so usually these commands are preceded by "sudo".
@@ -210,35 +193,34 @@ Compatibility Statements
 
   API Compatibility
 
-    The 2021.1 release of P4Python requires at least 2021.1 Perforce API.
+    The 2022.1 release of P4Python requires at least 2022.1 Perforce API.
     Older releases will not compile and are not supported.
 
   Python Compatibility
 
-    Python 2 support will be removed for the next release of P4Python
-    P4Python 2021.1 is the final release to support Python 2.
-    The next release of P4Python will only support Python 3.
+    With 2022.1 release of P4Python Python 2.7 is no longer supported.
     This is part of our commitment to focus on supported technology platforms.
 
-    The 2020.1 release of P4Python is supported building from
-    source with Python 2.7, 3.6, 3.7, 3.8 and 3.9.
+    The 2022.1 release of P4Python is supported building from
+    source with Python 3.7, 3.8, 3.9 and 3.10.
 
     For detailed compatibility, please check the following table:
 
     Python Release | P4Python Release
     ======================================
-    2.7            | 2010.1 or later
+    2.7            | 2010.1 up to 2022.1 (unsupported)
     3.3            | 2012.3 up to 2019.1 (unsupported)
     3.4            | 2014.1 up to 2019.1 (unsupported)
     3.5            | 2014.1 up to 2020.1 (unsupported)
-    3.6            | 2016.2 or later
+    3.6            | 2016.2 up to 2022.1 (unsupported)
     3.7            | 2018.2 or later
     3.8            | 2020.1 or later
     3.9            | 2021.1 or later
+    3.10           | 2022.1 or later
 
 
-    The P4Python installers on Windows support 2.7, 3.6, 3.7, 3.8 and
-    3.9 for both 32 and 64 bit. The installers have been changed to
+    The P4Python installers on Windows support 3.7, 3.8, 3.9 and
+    3.10 for both 32 and 64 bit. The installers have been changed to
     standard Python installers in MSI format and will support multiple
     Python installations.
 
@@ -259,8 +241,8 @@ Compatibility Statements
     This release is certified on the following platforms:
 
     Linux 2.6+ Intel (x86, x86_64)
-    Windows 10, Server 2016, Server 2019 Intel (x86, x86_64)
-    Mac OS X 10.15 (x86_64)
+    Windows 10, Server 2016, Server 2019, Server 2022 Intel (x86, x86_64)
+    Mac OS X 10.15, 11, 12 (x86_64)
 
   Compiler Compatibility
 
@@ -392,6 +374,25 @@ Key to symbols used in change notes below.
     * -- requires new P4Python
    ** -- requires new p4d server program
   *** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionality in 2022.1
+
+  #2281584 (Job #109173) * ***
+      Added support for Python 3.10.
+
+  #2269851 (Job #111022) * ** ***
+      Updated the spec templates to match the 2022.1 Helix Server specs.
+
+--------------------------------------------------------------------------
+
+New functionality in 2021.1 Patch 1
+
+  (Job #109912 ) * ***
+      Windows and Mac builds have updated version of OpenSSL(1.1.1n),
+      to address possible vulnerability: CVE-2022-0778.
+      Linux builds are not affected.
 
 --------------------------------------------------------------------------
 
