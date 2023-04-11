@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#53 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#54 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -60,7 +60,7 @@ struct specdata {
     const char *type;
     const char *spec;
 } speclist[] = {
-
+ 
     {
 	"branch",
 	"Branch;code:301;rq;ro;fmt:L;len:32;;"
@@ -137,6 +137,7 @@ struct specdata {
 	"MaxScanRows;code:403;type:word;len:12;;"
 	"MaxLockTime;code:407;type:word;len:12;;"
 	"MaxOpenFiles;code:413;type:word;len:12;;"
+	"MaxMemory;code:NNN;type:word;len:12;;"
 	"Timeout;code:406;type:word;len:12;;"
 	"PasswordTimeout;code:409;type:word;len:12;;"
 	"LdapConfig;code:410;type:line;len:128;;"
@@ -294,9 +295,9 @@ struct specdata {
 	"Type;code:708;rq;len:32;open:isolate;;"
 	"Description;code:709;type:text;len:128;open:isolate;;"
 	"Options;code:707;type:line;len:64;val:"
-	    "allsubmit/ownersubmit,unlocked/locked,"
-	    "toparent/notoparent,fromparent/nofromparent,"
-	    "mergedown/mergeany;open:isolate;;"
+	"allsubmit/ownersubmit,unlocked/locked,"
+	"toparent/notoparent,fromparent/nofromparent,"
+	"mergedown/mergeany;open:isolate;;"
 	"ParentView;code:NNN;rq;open:isolate;"
 	"pre:inherit;val:noinherit/inherit;;"
 	"Components;code:NNN;type:wlist;words:3;maxwords:4;len:64;open:propagate;fmt:C;;"
@@ -330,7 +331,6 @@ struct specdata {
     },
     { 0, 0}
 };
-
 
 
 SpecMgr::SpecMgr(PythonDebug * dbg)

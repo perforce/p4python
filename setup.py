@@ -46,6 +46,7 @@ import os, os.path, sys, re, shutil, stat, subprocess
 from tools.P4APIFtp import P4APIFtp
 from tools.PlatformInfo import PlatformInfo
 from tools.VersionInfo import VersionInfo
+from tools.P4APIHttps import P4APIHttps
 
 if sys.version_info < (3, 0):
     from ConfigParser import ConfigParser
@@ -162,13 +163,16 @@ class p4build_ext(build_ext_module):
     def download_p4api(self, api_ver, ssl_ver):
         global loaded_lib_from_ftp
 
-        print("Looking for P4 API {0} for SSL {1} on ftp.perforce.com".format(api_ver, ssl_ver))
-        p4ftp = P4APIFtp("perforce")
-        api_dir, api_tarball = p4ftp.load_api(api_ver, ssl_ver)
+        print("Looking for P4 API {0} for SSL {1} on https://ftp.perforce.com".format(api_ver, ssl_ver))
+
+        g_major, g_minor = P4APIFtp.get_glib_ver(self)
+        p4https = P4APIHttps()
+        url = p4https.get_url(g_minor, ssl_ver, api_ver)
+        api_dir, api_tarball= p4https.get_file(url)
         print("Extracted {0} into {1}".format(api_tarball, api_dir))
 
         loaded_lib_from_ftp = True
-        return api_dir, api_tarball
+        return api_dir
 
     # run strings on p4api librpc.a to get the version of OpenSSL needed
     def get_ssl_version_from_p4api(self):
@@ -229,7 +233,10 @@ class p4build_ext(build_ext_module):
         match = pattern.match(version_string)
         if match:
             version = int(match.group(1)) * 100 + int(match.group(2)) * 10 + int(match.group(3)) * 1
-            ver_only = str(match.group(1)) + "." + str(match.group(2)) + "." + str(match.group(3)) + str(match.group(4))
+            if str(match.group(4) is None):
+                ver_only = str(match.group(1)) + "." + str(match.group(2)) + "." + str(match.group(3))
+            else:
+                ver_only = str(match.group(1)) + "." + str(match.group(2)) + "." + str(match.group(3)) + str(match.group(4))
             if version >= MIN_SSL_VERSION:
                 release = match.group(4)
                 for p in os.environ["PATH"].split(os.pathsep):
@@ -295,7 +302,7 @@ class p4build_ext(build_ext_module):
         if not p4_api_dir:
             if (not self.apidir) and (sys.platform == "linux" or sys.platform == "linux2"):
                 # Attempt to download P4 API which matches our versions
-                (self.apidir, api_tarball) = self.download_p4api(VersionInfo(".").getVersion(), ssl_ver)
+                self.apidir = self.download_p4api(VersionInfo(".").getVersion(), ssl_ver)
                 p4_api_dir = self.apidir
 
         if not self.apidir:

@@ -28,8 +28,11 @@ for VERSION in $1; do
 	## Build the installer
 	"${PYBIN}/python" setup.py build_ext --apidir $P4API --ssl /openssl/lib bdist_wheel
 
+ 	## Upgrade pip
+	"${PYBIN}/python" -m pip install --upgrade pip
+
 	# Install the wheel
-	"${PYBIN}/python" -m pip install /work/p4-python/dist/$(ls /work/p4-python/dist/ | grep $VERSION)
+	"${PYBIN}/python" -m pip install /work/p4-python/dist/$(ls /work/p4-python/dist/ | grep $VERSION | grep \.whl)
 
 	## Test the build
 	"${PYBIN}/python" p4test.py
