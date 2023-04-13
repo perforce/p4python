@@ -32,13 +32,13 @@ class PlatformInfo:
                 pl = "NTX86"
                 arch = "32"
 
-            self.ID_OS = self.inStrStr(pl)
-            self.ID_REL = self.inStrStr(release_version.getFullP4Version())
-            self.ID_PATCH = self.inStrStr(release_version.patchlevel)
-            self.ID_API = self.inStrStr(api_version.getPatchVersion())
-            self.ID_Y = self.inStrStr(release_version.suppdate_year)
-            self.ID_M = self.inStrStr(release_version.suppdate_month)
-            self.ID_D = self.inStrStr(release_version.suppdate_day)
+            self.ID_OS = self.inStr(pl)
+            self.ID_REL = self.inStr(release_version.getFullP4Version())
+            self.ID_PATCH = self.inStr(release_version.patchlevel)
+            self.ID_API = self.inStr(api_version.getPatchVersion())
+            self.ID_Y = self.inStr(release_version.suppdate_year)
+            self.ID_M = self.inStr(release_version.suppdate_month)
+            self.ID_D = self.inStr(release_version.suppdate_day)
 
             self.libraries = ["oldnames", "wsock32", "advapi32", "ws2_32", "User32", "Gdi32", "Ole32", "Shell32", "crypt32", # MSVC libs
                               "libclient", "librpc", "libp4script_c", "libp4script", "libp4script_curl", "libp4script_sqlite", "libsupp"] # P4API libs
