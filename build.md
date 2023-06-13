@@ -1,6 +1,6 @@
 ## Building P4Python from Source
 
-  1. Download the r22.2 Perforce C++ API from the Perforce FTP site at
+  1. Download the r23.1 Perforce C++ API from the Perforce FTP site at
      "ftp://ftp.perforce.com/perforce". The API archive is located
      in release and platform-specific subdirectories.
 
