@@ -89,7 +89,7 @@ class P4APIFtp:
 
     def get_glib_ver(self):
         pattern = re.compile("ldd\s+\(.*\)\s+(\d+)\.(\d+)")
-        gentry = subprocess.check_output("ldd --version | grep ldd", executable="/bin/bash", shell="True")
+        gentry = subprocess.check_output("ldd --version | grep ldd", shell=True)
         if type(gentry) == bytes:
             gentry = gentry.decode()
         match = pattern.match(gentry)

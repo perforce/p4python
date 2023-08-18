@@ -243,7 +243,7 @@ class p4build_ext(build_ext_module):
                     pathToFile = os.path.join(p, "openssl")
                     if os.path.exists(pathToFile) and os.access(pathToFile, os.X_OK):
                         entry = subprocess.check_output("ldd {0} | grep libssl".format(pathToFile),
-                                                        executable="/bin/bash", shell="True")
+                                                        shell=True)
                         if entry is not False:
                             libpath = os.path.dirname(entry.split()[2])
 
