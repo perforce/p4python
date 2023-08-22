@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2022.2
+                             Version 2023.1
 
 Introduction
 
@@ -25,9 +25,9 @@ Introduction
 
 Important End-of-Life Notice
 
-    This major release of P4Python would be the last to provide installation
-    package for and test against Ubuntu 18.04. This is part of our commitment to
-    focus on supported technology platforms
+    This major release of P4Python would be the last to provide wheels for and
+    test against Python 3.7. This is part of our commitment to focus on 
+    supported technology platforms
 
 --------------------------------------------------------------------------
 
@@ -47,9 +47,9 @@ Installation
 
       python3 -m pip install --upgrade p4python
 
-    P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9 and 
-    3.10. In order for the binary wheel to be used, the ABI tag needs to match.
-    This often requires updated pip, to do so issue:
+    P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9, 3.10 
+    and 3.11. In order for the binary wheel to be used, the ABI tag needs to 
+    match.This often requires updated pip, to do so issue:
       python3 -m pip install --upgrade pip
 
   Installation using Linux binary packages
@@ -59,13 +59,12 @@ Installation
 
     Following packages are available:
 
-    RHEL 8      
+    RHEL/Rocky Linux 8      
         perforce-p4python3-python3.8
         perforce-p4python3-python3.9
-
-    Ubuntu 18.04      
-        perforce-p4python3-python3.7
-        perforce-p4python3-python3.8
+    
+    RHEL/Rocky Linux 9
+        perforce-p4python3-python3.9
 
     Ubuntu 20.04      
         perforce-p4python3-python3.8
@@ -98,86 +97,11 @@ Upgrading P4Python
 
 Building P4Python from Source
 
-  1. Download the r22.2 Perforce C++ API from the Perforce FTP site at
-     "ftp://ftp.perforce.com/perforce". The API archive is located
-     in release and platform-specific subdirectories.
+  The official version of P4Python exists as source on:
+  https://github.com/perforce/p4python
 
-     Under Linux the p4api is named p4api-glib<GLIBVER>-openssl<SSLVER>.tgz
-           Note that setup.py will download the correct p4api automatically from
-           ftp.perforce.com if you do not provide an --apidir parameter to the 
-           setup.py "build" command.
-
-     Mac OS X users should get the API from the relevant platform directory e.g.
-     "bin.macosx1010x86_64" or "bin.macosx12arm64". The p4api is named
-     p4api-openssl<SSLVER>.tgz
-
-     Under Windows the p4api needs to match your compiler, build type (static 
-     or dynamic) and SSL version.  for instance:
-
-           "p4api_vs2010_static_openssl1.1.1.zip" or 
-           "p4api_vs2015_dyn_openssl1.0.2.zip"
-
-     Note: 32-bit builds of P4Python require a 32-bit version of the
-           C++ API and a 32-bit version of Python. 64-bit builds of
-           P4Python require a 64-bit version of the C++ API and a
-           64-bit version of Python.
-
-     Unzip the archive into an empty directory.
-
-  2. Download and extract the P4Python API archive into a new, empty directory.
-
-  3. If needed, install the Openssl libraries.
-
-  4. To build P4Python, run the following command:
-
-     python3 setup.py build --apidir <Perforce C++ API absolute path> 
-     --ssl <OpenSSL library path>
-
-     Note: in order to reinstall cleanly P4Python, remove the
-           directory named "build".
-
-  5. To test your P4Python build, run the following command:
-
-     python3 p4test.py
-
-     Note: this test harness requires the Perforce server executable
-           p4d 17.1 or better to be installed and in the PATH.
-
-  6. To install P4Python, run the following command:
-
-     python3 setup.py install
-
-     if this doesn't work, you may need to both build and install in the same 
-     incantation:
-
-     python3 setup.py build --apidir <Perforce C++ API absolute path> 
-     --ssl <OpenSSL library path> install
-
-     Note: on Unix/Mac platforms, the installation must be performed
-           as the root user, so usually these commands are preceded by "sudo".
-           Also ensure that the umask is set correctly (typically 0022) before 
-           running the install. With a umask of 027, for example, the resulting 
-           installed files are accessible only by users of group root.
-
-     Note: on Windows platforms, open a Visual Studio Command window 
-     (with administrator permissions) and run the command there.
-
-  SSL support
-  -----------
-
-    Perforce Server 2012.1 and later supports SSL connections and the
-    C++ API has been compiled with this support. With 2020.1 SSL support
-    is mandatory, that is, P4Python must be linked with valid OpenSSL libraries.
-
-    To specify which SSL library to use, provide the --ssl [librarypath]
-    switch to the build. Without [librarypath] setup will attempt to run
-    "openssl version" to identify the location of the library path for
-    openssl and whether openssl has an appropriate version to link to.
-
-    If on linux, and the build process cannot find the correct openssl 
-    libraries, and the -ssl option was not used, then the openssl source will 
-    be downloaded, compiled and installed (this will require a superuser 
-    password for the installation)
+  Instructions for building are in the BUILD.md file which can be found here - 
+  https://github.com/perforce/p4python/blob/master/build.md
 
 --------------------------------------------------------------------------
 
@@ -190,27 +114,23 @@ Compatibility Statements
 
   API Compatibility
 
-    This release of P4Python requires at least 2022.2 Perforce API 
-    (2022.2/2407422). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2023.1 Perforce API 
+    (2023.1/2442900). Older releases will not compile and are not supported.
 
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.7, 3.8, 3.9 and 3.10.
+    Python 3.7, 3.8, 3.9, 3.10 and 3.11.
 
     For detailed compatibility, please check the following table:
 
     Python Release | P4Python Release
     ======================================
-    2.7            | 2010.1 up to 2022.1 (unsupported)
-    3.3            | 2012.3 up to 2019.1 (unsupported)
-    3.4            | 2014.1 up to 2019.1 (unsupported)
-    3.5            | 2014.1 up to 2020.1 (unsupported)
-    3.6            | 2016.2 up to 2022.1 (unsupported)
     3.7            | 2018.2 or later
     3.8            | 2020.1 or later
     3.9            | 2021.1 or later
     3.10           | 2022.1 or later
+    3.11           | 2022.2 or later
 
   OpenSSL Compatibility
 
@@ -232,14 +152,14 @@ Compatibility Statements
         10.15, 11, 12 (x86_64)
         12, 13 (ARM64)
     Linux (x86, x86_64)
-        Ubuntu 18.04, 20.04, 22.04
+        Ubuntu 20.04, 22.04
         CentOS 8
         Rocky Linux 9.1
 
-    The above platforms are tested and subject to regression testing on a frequent basis.
-    Errors or bugs discovered in these platforms are prioritized for correction. 
-    Any platform not listed above is not actively tested by Perforce. 
-    P4Python may run on platforms that are not actively tested.
+    The above platforms are tested and subject to regression testing on a 
+    frequent basis. Errors or bugs discovered in these platforms are prioritized
+    for correction. Any platform not listed above is not actively tested by
+    Perforce. P4Python may run on platforms that are not actively tested.
 
   Compiler Compatibility
 
@@ -372,6 +292,40 @@ Key to symbols used in change notes below.
    ** -- requires new p4d server program
   *** -- requires new P4API
 
+--------------------------------------------------------------------------
+
+New functionality in 2023.1 Patch 1 (2023.1/2477632) (2023/08/21)
+
+    #2475832, #2471641, #2468946 (Job #114714)
+        We now publish P4Python package for Rocky Linux 9 
+    
+--------------------------------------------------------------------------
+
+Bugs fixed in 2023.1 Patch 1 2023.1/2477632) (2023/08/21)
+
+    #2475148 (Job #116894)
+        Fixed an erroneous conditional statement in setup.py which resulted in
+        incorrect OpenSSL version definition in certain scenarios
+    
+    #2471616 (Job #116753)
+        Fixed an issue where P4.identify() was returning quoted strings in the
+        revision identifier on Windows platform. It is now consistent with
+        Linux based platforms
+
+--------------------------------------------------------------------------
+
+New functionality in 2023.1 (2023.1/2454917) (2023/06/15)
+
+    #2449421, #2449107 (Job #115666)
+        Built P4Python with P4API 2023.1 (2023.1/2442900)
+    
+--------------------------------------------------------------------------
+
+New functionality in 2022.2 Patch 1 (2022.2/2428370) (2023/04/13)
+
+    #2427292 (Job #113073)
+        Added wheels & build support for Python 3.11
+		
 --------------------------------------------------------------------------
 
 New functionality in 2022.2 (2022.2/2425690) (2023/04/04)

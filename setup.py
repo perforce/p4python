@@ -58,7 +58,7 @@ global_dist_directory = "p4python-"
 doclines = __doc__.split("\n")
 
 NAME = "p4python"
-VERSION = "2022.1"
+VERSION = "2023.1"
 PY_MODULES = ["P4"]
 P4_API_DIR = "p4api"
 DESCRIPTION = doclines[0]
@@ -233,7 +233,7 @@ class p4build_ext(build_ext_module):
         match = pattern.match(version_string)
         if match:
             version = int(match.group(1)) * 100 + int(match.group(2)) * 10 + int(match.group(3)) * 1
-            if str(match.group(4) is None):
+            if match.group(4) is None:
                 ver_only = str(match.group(1)) + "." + str(match.group(2)) + "." + str(match.group(3))
             else:
                 ver_only = str(match.group(1)) + "." + str(match.group(2)) + "." + str(match.group(3)) + str(match.group(4))

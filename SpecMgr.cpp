@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#54 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#55 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -101,7 +101,8 @@ struct specdata {
 	"AltRoots;code:308;type:llist;len:64;;"
 	"Options;code:309;type:line;len:64;val:"
 	"noallwrite/allwrite,noclobber/clobber,nocompress/compress,"
-	"unlocked/locked,nomodtime/modtime,normdir/rmdir;;"
+	"unlocked/locked,nomodtime/modtime,normdir/rmdir,"
+	"noaltsync/altsync;;"
 	"SubmitOptions;code:313;type:select;fmt:L;len:25;val:"
 	"submitunchanged/submitunchanged+reopen/revertunchanged/"
 	"revertunchanged+reopen/leaveunchanged/leaveunchanged+reopen;;"
