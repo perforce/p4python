@@ -1,23 +1,21 @@
 ## Building P4Python from Source
 
-  1. Download the r23.1 Perforce C++ API from the Perforce FTP site at
-     "ftp://ftp.perforce.com/perforce". The API archive is located
-     in release and platform-specific subdirectories.
+  1. Download the corresponding Perforce C++ API (e.g. if you trying to build P4Python 2023.1, download the r23.1 P4API) from
+     https://ftp.perforce.com/perforce. The API archive is located in release and platform-specific subdirectories.
 
-     Under Linux the p4api is named p4api-glib<GLIBVER>-openssl<SSLVER>.tgz\
-     			 Note that setup.py will download the correct p4api automatically from
-           ftp.perforce.com if you do not provide an --apidir parameter to the 
-           setup.py "build" command.
+     Under Linux, the p4api is named _p4api-glib\<GLIBVER>-openssl\<SSLVER>.tgz_
+     
+     Note that setup.py will download the correct p4api automatically from
+     https://ftp.perforce.com/perforce if you do not provide an\
+     _--apidir_ parameter to the "setup.py build" command.
 
      Mac OS X users should get the API from the relevant platform directory e.g.
-     "**bin.macosx1010x86_64**" or "**bin.macosx12arm64**". The p4api is named
-     p4api-openssl<SSLVER>.tgz
+     "**bin.macosx1015x86_64**" or "**bin.macosx12arm64**".\
+     The p4api is named _p4api-openssl\<SSLVER>.tgz_
 
      Under Windows the p4api needs to match your compiler, build type (static 
      or dynamic) and SSL version.  for instance:
-
-	   "**p4api_vs2010_static_openssl1.1.1.zip**" or\
-	   "**p4api_vs2015_dyn_openssl1.0.2.zip**"
+	   "**p4api_vs2019_static_openssl3.zip**" or "**p4api_vs2019_dyn_openssl3.zip**"
 
          Note: 32-bit builds of P4Python require a 32-bit version of the
                C++ API and a 32-bit version of Python. 64-bit builds of
@@ -26,33 +24,32 @@
 
      Unzip the archive into an empty directory.
 
-  2. Download and extract the P4Python API archive into a new, empty directory.
+  4. Download the P4Python source code from https://github.com/perforce/p4python and extract the archive into a new empty directory.
 
-  3. If needed, install the Openssl libraries.
+  5. If needed, install the Openssl libraries.
 
-  4. To build P4Python, run the following command:
+  6. To build P4Python, run the following command:
 
-     	_python3 setup.py build --apidir <Perforce C++ API absolute path> 
-     	--ssl <OpenSSL library path> _
+     	_python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl \<OpenSSL library path>_
 
 	  	 Note: in order to reinstall cleanly P4Python, remove the
                directory named "build".
 
-  5. To test your P4Python build, run the following command:
+  7. To test your P4Python build, run the following command:
 
      	_python3 p4test.py_
 
 		 Note: this test harness requires the Perforce server executable
                p4d 17.1 or better to be installed and in the PATH.
 
-  6. To install P4Python, run the following command:
+  8. To install P4Python, run the following command:
 
       _python3 setup.py install_
 
      if this doesn't work, you may need to both build and install in the same 
      incantation:
 
-     _python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path> install_
+     _python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl \<OpenSSL library path> install_
 
 		 Note: on Unix/Mac platforms, the installation must be performed
 		       as the root user, so usually these commands are preceded by "sudo".
