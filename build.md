@@ -33,7 +33,7 @@
   8. To build P4Python, execute setup.py in P4Python source directory, with the following arguments:
 
      ```
-     python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl \<OpenSSL library path>
+     python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path>
      ```
 
      **Note:** In order to cleanly reinstall P4Python, remove the directory named "build".
@@ -54,7 +54,7 @@
       If this doesn't work, you may need to build and install in the same command:
 
       ```
-      python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl \<OpenSSL library path> install
+      python3 setup.py build --apidir <Perforce C++ API absolute path> --ssl <OpenSSL library path> install
       ```
 
       **Note:** On Unix/Mac platforms, the installation must be performed
