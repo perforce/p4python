@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eEx
 
 export PATH=$PATH:/work/p4-bin/bin.linux26x86_64/
