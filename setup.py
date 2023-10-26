@@ -229,7 +229,7 @@ class p4build_ext(build_ext_module):
 
         print("Found installed SSL version " + version_string)
 
-        pattern = re.compile("OpenSSL (\d)\.(\d)\.(\d)(\S+\s?\S*)?\s+\d+ \S+ \d+")
+        pattern = re.compile(r"OpenSSL (\d)\.(\d)\.(\d)(\S+\s?\S*)?\s+\d+ \S+ \d+")
         match = pattern.match(version_string)
         if match:
             version = int(match.group(1)) * 100 + int(match.group(2)) * 10 + int(match.group(3)) * 1
