@@ -5,7 +5,7 @@ export PATH=$PATH:/work/p4-bin/bin.linux26x86_64/
 
 # Extract the p4api and set the P4API path var
 mkdir -p /work/p4-api
-tar xvfz /work/p4-bin/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz -C /work/p4-api
+tar xvfz /work/p4-bin/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz -C /work/p4-api
 P4API=`echo /work/p4-api/p4api-20*`
 
 cd /work/p4-python
@@ -31,14 +31,23 @@ for VERSION in $1; do
  	## Upgrade pip
 	"${PYBIN}/python" -m pip install --upgrade pip
 
+	#Install wheel module
+	"${PYBIN}/python" -m pip install wheel
+
 	# Install the wheel
 	"${PYBIN}/python" -m pip install /work/p4-python/dist/$(ls /work/p4-python/dist/ | grep $VERSION | grep \.whl)
 
 	## Test the build
 	"${PYBIN}/python" p4test.py
 
-	## Repair wheel with new ABI tag manylinux2010_x86_64
-	auditwheel repair dist/p4python-*-linux_x86_64.whl --plat manylinux_2_24_x86_64 -w repair
+	## Repair wheel with new ABI tag manylinux_2_28_x86_64
+	#auditwheel repair dist/p4python-*-linux_x86_64.whl --plat manylinux_2_28_x86_64 -w repair
+
+	#Changing wheel platform ABI tag to manylinux_2_28_x86_64
+	"${PYBIN}/python" -m wheel tags --platform-tag=manylinux_2_28_x86_64 dist/p4python-*-linux_x86_64.whl
+
+  #Move wheel to repair directory
+	mv dist/p4python-*-manylinux_2_28_x86_64.whl repair
 
 	rm -rf build p4python.egg-info dist
 done

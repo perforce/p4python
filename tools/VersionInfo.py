@@ -14,9 +14,9 @@ class VersionInfo:
     self.suppdate_month = None
     self.suppdate_day = None
 
-    releasePattern = re.compile("RELEASE\s+=\s+(?P<year>\d+)\s+(?P<version>\d+)\s*(?P<special>.*?)\s*;")
-    patchlevelPattern = re.compile("PATCHLEVEL\s+=\s+(?P<level>\d+)")
-    suppdatePattern = re.compile("SUPPDATE\s+=\s+(?P<year>\d+)\s+(?P<month>\d+)\s+(?P<day>\d+)")
+    releasePattern = re.compile(r"RELEASE\s+=\s+(?P<year>\d+)\s+(?P<version>\d+)\s*(?P<special>.*?)\s*;")
+    patchlevelPattern = re.compile(r"PATCHLEVEL\s+=\s+(?P<level>\d+)")
+    suppdatePattern = re.compile(r"SUPPDATE\s+=\s+(?P<year>\d+)\s+(?P<month>\d+)\s+(?P<day>\d+)")
 
     self.patterns=[]
     self.patterns.append((releasePattern, self.handleRelease))
@@ -37,7 +37,7 @@ class VersionInfo:
   def handleRelease(self, year=0, version=0, special=''):
     self.release_year = year
     self.release_version = version
-    self.release_special = re.sub("\s+", ".", special)
+    self.release_special = re.sub(r"\s+", ".", special)
 
   def handlePatchlevel(self, level=0):
     self.patchlevel = level

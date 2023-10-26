@@ -8,7 +8,7 @@ class Version:
         self.process(version_string)
 
     def process(self, version_string):
-        r = re.compile("r(\d+).(\d+)")
+        r = re.compile(r"r(\d+).(\d+)")
         m = r.match(version_string)
         if m:
             self.year = m.group(1)

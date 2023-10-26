@@ -47,8 +47,8 @@ Installation
 
       python3 -m pip install --upgrade p4python
 
-    P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9, 3.10 
-    and 3.11. In order for the binary wheel to be used, the ABI tag needs to 
+    P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9, 3.10,
+    3.11 and 3.12. In order for the binary wheel to be used, the ABI tag needs to
     match.This often requires updated pip, to do so issue:
       python3 -m pip install --upgrade pip
 
@@ -120,7 +120,7 @@ Compatibility Statements
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.7, 3.8, 3.9, 3.10 and 3.11.
+    Python 3.7, 3.8, 3.9, 3.10, 3.11 and 3.12.
 
     For detailed compatibility, please check the following table:
 
@@ -131,6 +131,7 @@ Compatibility Statements
     3.9            | 2021.1 or later
     3.10           | 2022.1 or later
     3.11           | 2022.2 or later
+    3.12           | 2023.1 or later
 
   OpenSSL Compatibility
 
@@ -292,6 +293,13 @@ Key to symbols used in change notes below.
    ** -- requires new p4d server program
   *** -- requires new P4API
 
+--------------------------------------------------------------------------
+
+New functionality in 2023.1 Patch 2 (2023.1/2509188) (2023/10/25)
+
+    #2503929 (Job #117105)
+        Added wheels & build support for Python 3.12
+        
 --------------------------------------------------------------------------
 
 New functionality in 2023.1 Patch 1 (2023.1/2477632) (2023/08/21)

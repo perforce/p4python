@@ -10,7 +10,7 @@ import tempfile
 class P4APIHttps:
 
     def get_ssl_ver(self, ssl_ver_string):
-        pattern = re.compile("(\d+)\.(\d+).(\d+).*")
+        pattern = re.compile(r"(\d+)\.(\d+).(\d+).*")
         match = pattern.match(str(ssl_ver_string))
         if match:
             return match.group(1), match.group(2), match.group(3)

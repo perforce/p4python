@@ -7,7 +7,7 @@ from __future__ import print_function
     This uses the Python type P4API.P4Adapter, which is a wrapper for the
     Perforce ClientApi object.
     
-    $Id: //depot/main/p4-python/P4.py#108 $
+    $Id: //depot/main/p4-python/P4.py#109 $
     
     #*******************************************************************************
     # Copyright (c) 2007-2010, Perforce Software, Inc.  All rights reserved.
@@ -355,7 +355,7 @@ def processFilelog(h):
             r.change = int( h[ "change" ][ n ] )
             r.action = h[ "action" ][ n ]
             r.type = h[ "type" ][ n ]
-            r.time = datetime.datetime.utcfromtimestamp( int( h[ "time" ][ n ]) )
+            r.time = datetime.datetime.fromtimestamp( int( h[ "time" ][ n ]), tz=None )
             r.user = h[ "user" ][ n ]
             r.client = h[ "client" ][ n ]
             r.desc = h[ "desc" ][ n ]
@@ -774,7 +774,7 @@ class P4(P4API.P4Adapter):
         fname = self.ticket_file
         with open(fname) as f:
             tickets_raw = f.readlines()
-        pattern = re.compile('([^=]*)=(.*):([^:]*)\n')
+        pattern = re.compile(r'([^=]*)=(.*):([^:]*)\n')
         tickets = [ pattern.match(x).groups() for x in tickets_raw ]
         keys = [ "Host", "User", "Ticket" ]
         result = [ dict(zip(keys, x)) for x in tickets ]
@@ -1082,7 +1082,7 @@ def __check_version(pathToFile):
         output = output.decode('UTF-8')
     chunks = output.split(os.linesep)
     
-    pattern = re.compile("Rev. (?P<Program>.+)/(?P<Platform>.+)/(?P<Release>.+)/(?P<Patch>\d+) \((\d+/\d+/\d+)\).")
+    pattern = re.compile(r"Rev. (?P<Program>.+)/(?P<Platform>.+)/(?P<Release>.+)/(?P<Patch>\d+) \((\d+/\d+/\d+)\).")
     
     for c in chunks:
         match = pattern.match(c)

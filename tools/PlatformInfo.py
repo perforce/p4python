@@ -127,7 +127,7 @@ class PlatformInfo:
 
             elif unameOut[0] == "SunOS":
                 unix = "SOLARIS"
-                release = re.match("5.(\d+)", unameOut[2]).group(1)
+                release = re.match(r"5.(\d+)", unameOut[2]).group(1)
                 arch = self.architecture(unameOut[4])
             elif unameOut[0] == 'FreeBSD':
                 unix = "FREEBSD"
@@ -184,7 +184,7 @@ class PlatformInfo:
             return "ARM"
 
     def get_ssl_ver(self, ssl_ver_string):
-        pattern = re.compile("(\d+)\.(\d+).(\d+).*")
+        pattern = re.compile(r"(\d+)\.(\d+).(\d+).*")
         match = pattern.match(ssl_ver_string)
         if match:
             return match.group(1), match.group(2), match.group(3)

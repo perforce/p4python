@@ -88,7 +88,7 @@ class P4APIFtp:
         return platform_str
 
     def get_glib_ver(self):
-        pattern = re.compile("ldd\s+\(.*\)\s+(\d+)\.(\d+)")
+        pattern = re.compile(r"ldd\s+\(.*\)\s+(\d+)\.(\d+)")
         gentry = subprocess.check_output("ldd --version | grep ldd", executable="/bin/bash", shell="True")
         if type(gentry) == bytes:
             gentry = gentry.decode()
@@ -100,7 +100,7 @@ class P4APIFtp:
 
 
     def get_ssl_ver(self, ssl_ver_string):
-        pattern = re.compile("(\d+)\.(\d+).(\d+).*")
+        pattern = re.compile(r"(\d+)\.(\d+).(\d+).*")
         match = pattern.match(str(ssl_ver_string))
         if match:
             return match.group(1), match.group(2), match.group(3)

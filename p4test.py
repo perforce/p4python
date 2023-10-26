@@ -68,14 +68,17 @@ class TestP4Python(unittest.TestCase):
     def cleanupTestTree(self):
         os.chdir(self.startdir)
         if os.path.isdir(self.server_root):
-            shutil.rmtree(self.server_root, False, onRmTreeError)
+            if sys.version_info.minor < 12:
+                shutil.rmtree(self.server_root, False, onRmTreeError)
+            else:
+                shutil.rmtree(self.server_root, False, onexc=onRmTreeError)
 
     def ensureDirectory(self, directory):
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
     def getServerPatchLevel(self, info):
-        c = re.compile("[^/]*/[^/]*/[^/]*/([^/]*)\s\(\d+/\d+/\d+\)")
+        c = re.compile(r"[^/]*/[^/]*/[^/]*/([^/]*)\s\(\d+/\d+/\d+\)")
 
         serverVersion = info[0]["serverVersion"]
         m = c.match(serverVersion)
@@ -552,7 +555,7 @@ class TestP4(TestP4Python):
         map = P4.Map(a)
         self.assertEqual(map.count(), 3, "Map does not contain 3 elements")
 
-        map2 = P4.Map("//ws/...", "C:\Work\...")
+        map2 = P4.Map("//ws/...", r"C:\Work\...")
         self.assertEqual(map2.count(), 1, "Map2 does not contain any elements")
 
         map3 = P4.Map.join(map, map2)
@@ -997,7 +1000,7 @@ class TestP4(TestP4Python):
             # create a file with windows encoding for its filename
             uname = platform.uname()
             if uname.system == 'Darwin':
-                comp = re.compile('(\d+)\.(\d+)\.(\d+)')
+                comp = re.compile(r'(\d+)\.(\d+)\.(\d+)')
                 match = comp.match(uname.release)
                 major = int(match.group(1))
                 if major >= 16: # macos Sierra or higher
