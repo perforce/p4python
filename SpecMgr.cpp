@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#55 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#56 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -293,7 +293,8 @@ struct specdata {
 	"Owner;code:704;len:32;open:isolate;;"
 	"Name;code:703;rq;type:line;len:32;open:isolate;;"
 	"Parent;code:702;rq;len:64;open:isolate;;"
-	"Type;code:708;rq;len:32;open:isolate;;"
+	"Type;code:708;rq;type:select;len:32;open:isolate;"
+	"val:mainline/virtual/development/release/task;;"
 	"Description;code:709;type:text;len:128;open:isolate;;"
 	"Options;code:707;type:line;len:64;val:"
 	"allsubmit/ownersubmit,unlocked/locked,"

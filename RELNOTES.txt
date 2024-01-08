@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2023.1
+                             Version 2023.2
 
 Introduction
 
@@ -26,8 +26,8 @@ Introduction
 Important End-of-Life Notice
 
     This major release of P4Python would be the last to provide wheels for and
-    test against Python 3.7. This is part of our commitment to focus on 
-    supported technology platforms
+    test against MacOS 10.15. This is part of our commitment to focus on 
+    supported technology platforms.
 
 --------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ Installation
 
       python3 -m pip install --upgrade p4python
 
-    P4Python is distributed as a binary wheels for Python 3.7, 3.8, 3.9, 3.10,
+    P4Python is distributed as a binary wheels for Python 3.8, 3.9, 3.10,
     3.11 and 3.12. In order for the binary wheel to be used, the ABI tag needs to
     match.This often requires updated pip, to do so issue:
       python3 -m pip install --upgrade pip
@@ -77,8 +77,8 @@ Installation
 
     Maya has a private python executable called "mayapy".
 
-    The instructions for installation are the same as the source install
-    below, except use "mayapy" instead of "python".
+    The instructions for installation are same as in "Building P4Python from Source"
+    section, except use "mayapy" instead of "python".
 
 --------------------------------------------------------------------------
 
@@ -114,19 +114,18 @@ Compatibility Statements
 
   API Compatibility
 
-    This release of P4Python requires at least 2023.1 Perforce API 
-    (2023.1/2442900). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2023.2 Perforce API 
+    (2023.2/2519561). Older releases will not compile and are not supported.
 
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.7, 3.8, 3.9, 3.10, 3.11 and 3.12.
+    Python 3.8, 3.9, 3.10, 3.11 and 3.12.
 
     For detailed compatibility, please check the following table:
 
     Python Release | P4Python Release
     ======================================
-    3.7            | 2018.2 or later
     3.8            | 2020.1 or later
     3.9            | 2021.1 or later
     3.10           | 2022.1 or later
@@ -292,6 +291,13 @@ Key to symbols used in change notes below.
     * -- requires new P4Python
    ** -- requires new p4d server program
   *** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionality in 2023.2 (2023.2/2527637) (2023/12/04)
+
+    #2522046 (Job #117813)
+        Built P4Python with P4API 2023.2 (2023.2/2519561)
 
 --------------------------------------------------------------------------
 
