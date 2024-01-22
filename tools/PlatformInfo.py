@@ -182,6 +182,8 @@ class PlatformInfo:
             return 'SPARC'
         elif re.match('arm.*', str):
             return "ARM"
+        elif re.match('aarch.*', str):
+            return "ARM"
 
     def get_ssl_ver(self, ssl_ver_string):
         pattern = re.compile(r"(\d+)\.(\d+).(\d+).*")
