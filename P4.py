@@ -67,6 +67,13 @@ class P4Exception(Exception):
 
     def __str__(self):
         return str(self.value)
+    
+    def __reduce__(self):
+        if hasattr(self, 'errors'):
+            return (self.__class__, ((self.value, self.errors, self.warnings),))
+        return (self.__class__, (self.value, ))
+            
+
 
     def __reduce__(self):
         if hasattr(self, 'errors'):
