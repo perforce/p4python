@@ -294,6 +294,17 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+New functionality in 2023.2 Patch 1 (2023.2/2543803) (2024/01/22)
+        
+    (Job #118907)
+        This release is built against P4API (2023.2/2519561),
+        to address possible vulnerability: CVE-2023-5759.
+
+    #2542109 (Job #117135)
+        Made P4Exception object pickleable.
+
+--------------------------------------------------------------------------
+
 New functionality in 2023.2 (2023.2/2527637) (2023/12/04)
 
     #2522046 (Job #117813)
@@ -333,6 +344,14 @@ New functionality in 2023.1 (2023.1/2454917) (2023/06/15)
     #2449421, #2449107 (Job #115666)
         Built P4Python with P4API 2023.1 (2023.1/2442900)
     
+--------------------------------------------------------------------------
+
+New functionality in 2022.2 Patch 2 (2022.2/2543766) (2024/01/18)
+        
+    (Job #118907)
+        This release is built against P4API (2022.2/2531894),
+        to address possible vulnerability: CVE-2023-5759.
+
 --------------------------------------------------------------------------
 
 New functionality in 2022.2 Patch 1 (2022.2/2428370) (2023/04/13)
