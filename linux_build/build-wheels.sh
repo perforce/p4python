@@ -5,7 +5,7 @@ export PATH=$PATH:/work/p4-bin/bin.linux26x86_64/
 
 # Extract the p4api and set the P4API path var
 mkdir -p /work/p4-api
-tar xvfz /work/p4-bin/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz -C /work/p4-api
+tar xvfz /work/p4-bin/bin.linux26x86_64/p4api-glibc2.12-openssl3.tgz -C /work/p4-api
 P4API=`echo /work/p4-api/p4api-20*`
 
 cd /work/p4-python

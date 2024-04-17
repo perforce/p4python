@@ -294,6 +294,14 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+Bugs fixed in 2023.2 Patch 2 (2023.2/2581979) (2024/04/05)
+        
+    #2558218 (Job #094891)
+        Manylinux wheels now supports parallel threaded sync
+        without requiring the execution of a copy of "p4".
+
+--------------------------------------------------------------------------
+
 New functionality in 2023.2 Patch 1 (2023.2/2543803) (2024/01/22)
         
     (Job #118907)
@@ -326,7 +334,7 @@ New functionality in 2023.1 Patch 1 (2023.1/2477632) (2023/08/21)
     
 --------------------------------------------------------------------------
 
-Bugs fixed in 2023.1 Patch 1 2023.1/2477632) (2023/08/21)
+Bugs fixed in 2023.1 Patch 1 (2023.1/2477632) (2023/08/21)
 
     #2475148 (Job #116894)
         Fixed an erroneous conditional statement in setup.py which resulted in
