@@ -180,7 +180,7 @@ class PlatformInfo:
             return 'X86_64'
         elif str == 'sparc':
             return 'SPARC'
-        elif re.match('arm.*', str):
+        elif re.match('arm.*', str) or str =='aarch64':
             return "ARM"
 
     def get_ssl_ver(self, ssl_ver_string):
