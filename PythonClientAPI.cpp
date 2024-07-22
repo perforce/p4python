@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#78 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#79 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -1264,5 +1264,14 @@ void PythonClientAPI::RunCmd(const char *cmd, ClientUser *ui, int argc, char * c
 	    SetUnicode();
     }
     SetCmdRun();
+
+}
+
+void PythonClientAPI::SetBreak(PythonKeepAlive* cb)
+{
+    if( IsConnected() ) {
+        debug.debug(P4PYDBG_COMMANDS, "[P4] Establish the callback" );
+        client.SetBreak(cb);
+    }
 
 }

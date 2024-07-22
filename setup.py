@@ -99,7 +99,8 @@ class p4build(build_module):
     ]
 
     def initialize_options(self, *args, **kwargs):
-        self.ssl = self.apidir = None
+        self.apidir = os.getenv("apidir", None)
+        self.ssl = os.getenv("ssl", None)
         build_module.initialize_options(self, *args, **kwargs)
 
     def finalize_options(self):
@@ -123,7 +124,8 @@ class p4build_ext(build_ext_module):
     ]
 
     def initialize_options(self, *args, **kwargs):
-        self.ssl = self.apidir = None
+        self.apidir = os.getenv("apidir", None)
+        self.ssl = os.getenv("ssl", None)
         build_ext_module.initialize_options(self, *args, **kwargs)
 
     def get_config(self, option):
@@ -420,7 +422,7 @@ def do_setup():
                                            "PythonMergeData.cpp", "P4MapMaker.cpp",
                                            "PythonSpecData.cpp", "PythonMessage.cpp",
                                            "PythonActionMergeData.cpp", "PythonClientProgress.cpp",
-                                           "P4PythonDebug.cpp"],
+                                           "P4PythonDebug.cpp", "PythonKeepAlive.cpp"],
                                  include_dirs=[],
                                  library_dirs=[],
                                  libraries=[],

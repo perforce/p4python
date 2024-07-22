@@ -19,20 +19,18 @@ mkdir -p repair
 for VERSION in $1; do
 	PYBIN="/opt/python/$(ls /opt/python/ | grep cp$VERSION | grep -v 27mu)/bin"
 
-	## Make tgz
-	"${PYBIN}/python" setup.py build_ext --apidir $P4API --ssl /openssl/lib sdist --formats=gztar --keep-temp
-
-	## Make object files for installer
-	"${PYBIN}/python" setup.py build --apidir $P4API --ssl /openssl/lib
-
-	## Build the installer
-	"${PYBIN}/python" setup.py build_ext --apidir $P4API --ssl /openssl/lib bdist_wheel
+	## Set env path for apidir and ssl directories 
+	export apidir=$P4API
+	export ssl=/openssl/lib
 
  	## Upgrade pip
 	"${PYBIN}/python" -m pip install --upgrade pip
 
 	#Install wheel module
 	"${PYBIN}/python" -m pip install wheel
+
+	## Build the installer
+	"${PYBIN}/python" -m pip wheel . -w dist -v
 
 	# Install the wheel
 	"${PYBIN}/python" -m pip install /work/p4-python/dist/$(ls /work/p4-python/dist/ | grep $VERSION | grep \.whl)

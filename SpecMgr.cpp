@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#56 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#57 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -70,7 +70,7 @@ struct specdata {
 	"Description;code:306;type:text;len:128;;"
 	"Options;code:309;type:line;len:32;val:"
 	"unlocked/locked;;"
-	"View;code:311;type:wlist;words:2;len:64;;"
+	"View;code:311;fmt:C;type:wlist;words:2;len:64;;"
     },
     {
 	"change",
@@ -112,9 +112,9 @@ struct specdata {
 	"StreamAtChange;code:316;type:line;len:64;;"
 	"ServerID;code:315;type:line;ro;len:64;;"
 	"Type;code:318;type:select;len:10;val:"
-	"writeable/readonly/graph/partitioned;;"
+	"writeable/readonly/graph/partitioned/partitioned-jnl;;"
 	"Backup;code:319;type:select;len:10;val:enable/disable;;"
-	"View;code:311;type:wlist;words:2;len:64;;"
+	"View;code:311;fmt:C;type:wlist;words:2;len:64;;"
 	"ChangeView;code:317;type:llist;len:64;;"
     },
     {
@@ -169,7 +169,7 @@ struct specdata {
 	"unlocked/locked,noautoreload/autoreload;;"
 	"Revision;code:312;type:word;words:1;len:64;;"
 	"ServerID;code:315;type:line;ro;len:64;;"
-	"View;code:311;type:wlist;len:64;;"
+	"View;code:311;fmt:C;type:wlist;len:64;;"
     },
     {
 	"ldap",
@@ -294,7 +294,7 @@ struct specdata {
 	"Name;code:703;rq;type:line;len:32;open:isolate;;"
 	"Parent;code:702;rq;len:64;open:isolate;;"
 	"Type;code:708;rq;type:select;len:32;open:isolate;"
-	"val:mainline/virtual/development/release/task;;"
+	"val:mainline/virtual/development/release/task/sparsedev/sparserel;;"
 	"Description;code:709;type:text;len:128;open:isolate;;"
 	"Options;code:707;type:line;len:64;val:"
 	"allsubmit/ownersubmit,unlocked/locked,"
@@ -315,7 +315,7 @@ struct specdata {
     },
     {
 	"typemap",
-	"TypeMap;code:601;type:wlist;words:2;len:64;opt:default;z;;"
+	"TypeMap;code:601;fmt:C;type:wlist;words:2;len:64;opt:default;z;;"
     },
     {
 	"user",

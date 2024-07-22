@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/P4API.cpp#63 $
+ * $Id: //depot/main/p4-python/P4API.cpp#64 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -57,6 +57,7 @@
 #include "PythonMessage.h"
 #include "PythonTypes.h"
 #include "debug.h"
+#include "PythonKeepAlive.h"
 
 // #include <alloca.h> 
 
@@ -586,6 +587,31 @@ static PyObject * P4Adapter_getTunable(P4Adapter * self, PyObject *args)
     return NULL;
 }
 
+// ==================
+// ==== SetBreak ====
+// ==================
+
+static PyObject* P4Adapter_setBreak(P4Adapter* self, PyObject* args) {
+    PyObject* py_callable;
+
+    // Parse the arguments
+    if (!PyArg_ParseTuple(args, "O", &py_callable)) {
+        return NULL;
+    }
+
+    // Check if the parsed object is callable
+    if (!PyCallable_Check(py_callable)) {
+        PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+        return NULL;
+    }
+
+    // Create an object pointer of PythonKeepAlive and pass py_callable
+    PythonKeepAlive* cb = new PythonKeepAlive(py_callable);
+    self->clientAPI->SetBreak(cb);
+
+    Py_RETURN_NONE;
+}
+
 #if PY_MAJOR_VERSION >= 3
 
 static PyObject * P4Adapter_convert(P4Adapter * self, PyObject *args)
@@ -631,6 +657,8 @@ static PyMethodDef P4Adapter_methods[] = {
       "Sets a tunable to the specified value"},
     {"get_tunable", (PyCFunction)P4Adapter_getTunable, METH_VARARGS,
       "Returns the value for this tunable or 0"},
+    {"setbreak", (PyCFunction)P4Adapter_setBreak, METH_VARARGS,
+        "Set the break callback"},
 
 #if PY_MAJOR_VERSION >= 3
      {"__convert", (PyCFunction)P4Adapter_convert, METH_VARARGS,

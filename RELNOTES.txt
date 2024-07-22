@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2023.2
+                             Version 2024.1
 
 Introduction
 
@@ -20,14 +20,6 @@ Introduction
 
     >>> import P4
     >>> print(P4.P4.identify())
-
---------------------------------------------------------------------------
-
-Important End-of-Life Notice
-
-    This major release of P4Python would be the last to provide wheels for and
-    test against MacOS 10.15. This is part of our commitment to focus on 
-    supported technology platforms.
 
 --------------------------------------------------------------------------
 
@@ -114,8 +106,8 @@ Compatibility Statements
 
   API Compatibility
 
-    This release of P4Python requires at least 2023.2 Perforce API 
-    (2023.2/2519561). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2024.1 Perforce API 
+    (2024.1/2596294). Older releases will not compile and are not supported.
 
   Python Compatibility
 
@@ -148,8 +140,8 @@ Compatibility Statements
 
     Windows (x86, x86_64)
         Server 2016
-    Mac OS X
-        10.15, 11, 12 (x86_64)
+    Mac OS
+        11, 12 (x86_64)
         12, 13 (ARM64)
     Linux (x86, x86_64)
         Ubuntu 20.04, 22.04
@@ -291,6 +283,33 @@ Key to symbols used in change notes below.
     * -- requires new P4Python
    ** -- requires new p4d server program
   *** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionalities in 2024.1 (2024.1/2625398) (2024/07/17)
+
+    #2603816 (Job #120930)
+        Built P4Python with P4API 2024.1 (2024.1/2596294)
+        
+    #2621458 (Job #115700)
+        Improved the readability of P4Exception with str(e) and 
+        provided more detailed information in repr(e).
+        
+    #2624271 (Job #119953)
+        Added p4.setbreak(), equivalent to P4API ClientApi::SetBreak(), 
+        to enable P4 command interruption. Use a PyKeepAlive object 
+        with p4.setbreak() to set a callback every 0.5 seconds during 
+        command execution for terminating connections.
+        
+Bugs fixed in 2024.1 (2024.1/2625398) (2024/07/17)
+
+    #2602772 (Job #116089)
+        Fixed 'SetuptoolsDeprecationWarning: setup.py install is deprecated' 
+        by switching wheel/package installation to 'pip' instead of outdated 
+        'setup.py install'.
+        
+    #2591727 (Job #120437)
+        RPM packages now includes supported OS version in name string.
 
 --------------------------------------------------------------------------
 

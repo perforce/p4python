@@ -1383,13 +1383,8 @@ class TestP4(TestP4Python):
 
         except Exception as e:
             error = str(e)
-            results = ''.join([i for i in error if not i.isdigit()])           
-            expected = "\t[Error]: \"Merges still pending -- use 'resolve' to merge files.\\nSubmit failed -- fix problems above then use 'p submit -c '.\""
-            
-            for item in results.split("\n"):
-                if "[Error]:" in item:
-                    result = item
-
+            result = ''.join([i for i in error if not i.isdigit()])           
+            expected = "Merges still pending -- use 'resolve' to merge files.\nSubmit failed -- fix problems above then use 'p submit -c '."
             self.assertEqual(result, expected)
 
     def testLockedClientRemoval(self):
@@ -1411,6 +1406,58 @@ class TestP4(TestP4Python):
         self.p4.save_client(lockedClient)       
         with self.p4.temp_client("temp", "LockedClient"):
             self.p4.run_info()
+            
+    def testSetbreak( self ):
+        testDir = 'test_setbreak'
+        testAbsoluteDir = os.path.join(self.client_root, testDir)
+        os.mkdir(testAbsoluteDir)
+
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+        self._setClient()
+
+        # create the file for testing setbreak
+        class MyKeepAlive(P4.PyKeepAlive):
+            def __init__(self, total_count):
+                P4.PyKeepAlive.__init__(self)
+                self.counter = 0
+                self.total_count = total_count
+
+            def isAlive(self):
+                self.counter += 1
+                if self.counter > self.total_count:
+                    return 0
+                return 1
+        
+        #create a multiple changelist revision
+        for i in range(100):
+            file = "foo" + str(i)
+            fname = os.path.join(testAbsoluteDir, file)
+            line = "This is a test line to create a test file.\n"
+            with open(fname, 'w') as file:
+                file.write(line)
+            testFile = str(fname)
+            self.p4.run_add(testFile)
+            
+            change = self.p4.fetch_change()
+            change._description = "Initial changes"
+            self.p4.run_submit(change)
+
+        ka = MyKeepAlive(total_count=0)
+        self.p4.setbreak(ka)
+        total_files = len(self.p4.run("changes")) 
+        self.assertGreater(100, total_files, "Setbreak is not working")
+        self.p4.disconnect()
+        
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+        ka = MyKeepAlive(total_count=50)
+        self.p4.setbreak(ka)
+        total_files = len(self.p4.run("changes")) 
+        self.assertEqual(100, total_files, "Setbreak is not working")
+        self.p4.disconnect()
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/PythonClientAPI.h#43 $
+ * $Id: //depot/main/p4-python/PythonClientAPI.h#44 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -37,6 +37,8 @@
 
 #ifndef PYTHON_CLIENT_API_H
 #define PYTHON_CLIENT_API_H
+
+#include "PythonKeepAlive.h"
 
 class Enviro;
 class PythonClientAPI
@@ -231,6 +233,9 @@ public:
     void Except( const char *func, const char *msg );
     void Except( const char *func, Error *e );
     void Except( const char *func, const char *msg, const char *cmd );
+
+    // SetBreak
+    void SetBreak( PythonKeepAlive* cb );
 
 public:
     // setter/getter methods and attributes

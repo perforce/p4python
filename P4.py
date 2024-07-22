@@ -7,7 +7,7 @@ from __future__ import print_function
     This uses the Python type P4API.P4Adapter, which is a wrapper for the
     Perforce ClientApi object.
     
-    $Id: //depot/main/p4-python/P4.py#110 $
+    $Id: //depot/main/p4-python/P4.py#112 $
     
     #*******************************************************************************
     # Copyright (c) 2007-2010, Perforce Software, Inc.  All rights reserved.
@@ -43,30 +43,43 @@ from __future__ import print_function
     See accompanying LICENSE.txt including for redistribution permission.
     """
 
-import sys, datetime
+import sys, datetime, time
 import re
 import shutil
 from contextlib import contextmanager
 import uuid, tempfile
 import os, os.path, platform
 import subprocess
+import threading
 
 # P4Exception - some sort of error occurred
 class P4Exception(Exception):
     """Exception thrown by P4 in case of Perforce errors or warnings"""
-    
+
     def __init__(self, value):
-        Exception.__init__(self)
-        
+        super().__init__(value)
         if isinstance(value, (list, tuple)) and len(value) > 2:
-            self.value = value[0]
-            self.errors = value[1]
-            self.warnings = value[2]
+            if len(value[1]) > 0 or len(value[2]) > 0:
+                self.value = value[0]
+                self.errors = value[1]
+                self.warnings = value[2]
+            else:
+                self.value = value[0]
+                self.errors = [re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])]
+                self.warnings = value[2]
         else:
             self.value = value
 
     def __str__(self):
-        return str(self.value)
+        if self.errors:
+            return str(self.errors[0])
+        elif self.warnings:
+            return str(self.warnings[0])
+        else:
+            return re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({str(self)!r})"
 
     def __reduce__(self):
         if hasattr(self, 'errors'):
@@ -1103,6 +1116,42 @@ def __check_version(pathToFile):
                 raise Exception("{} must be at least 2015.1, not {}".format(program, version))
 
     raise Exception("Unknown P4 output : {}".format(output) )
+    
+    
+class PyKeepAlive:
+    def __init__(self):
+        self.__thread = None
+        self.__alive = 1
+
+    def isAlive(self):
+        return self.__alive
+
+    # private member function
+    def __poll(self):
+        while True:
+            if self.isAlive() == 0:
+                self.__alive = 0
+                return 0
+            time.sleep(0.5)
+
+    # private member function
+    def __executeAll(self):
+        if self.__thread and self.__thread.is_alive():
+            pass
+
+        elif self.__thread and not self.__thread.is_alive():
+            self.__thread.join()
+
+        else:
+            self.__thread = threading.Thread(target=self.__poll)
+            self.__thread.daemon = True
+            self.__thread.start()
+
+        return self.__alive
+
+    def __call__(self):
+        return self.__executeAll()
+        
 
 if __name__ == "__main__":
     p4 = P4()
