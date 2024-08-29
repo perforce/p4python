@@ -615,7 +615,7 @@ class P4(P4API.P4Adapter):
         flatArgs = self.__flatten(args)
 
         if self.logger:
-            self.logger.info("p4 " + " ".join(flatArgs))
+            self.logger.info("p4 " + " ".join(str(x) for x in flatArgs))
         
         # if encoding is set, translate to Bytes
         if hasattr(self,"encoding") and self.encoding and not self.encoding == 'raw':
