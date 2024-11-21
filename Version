@@ -11,7 +11,7 @@
 # SUPPDATE = 2010 06 17 ;
 #	Of the build.  The copyright date is derived from SUPPDATE.
 
-RELEASE = 2024 1;
-PATCHLEVEL = 2603570 ;
-SUPPDATE = 2024 05 29 ;
+RELEASE = 2024 2;
+PATCHLEVEL = 2676807 ;
+SUPPDATE = 2024 11 07 ;
 

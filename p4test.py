@@ -112,6 +112,8 @@ class TestP4(TestP4Python):
         self.p4.maxresults      = 100000
         self.p4.maxscanrows     = 1000000
         self.p4.maxlocktime     = 10000
+        self.p4.maxopenfiles    = 1000
+        self.p4.maxmemory       = 2000
         self.p4.password        = "mypassword"
         self.p4.port            = "myserver:1666"
         self.p4.prog            = "myprogram"
@@ -126,6 +128,8 @@ class TestP4(TestP4Python):
         self.assertEqual( self.p4.maxresults, 100000, "maxresults" )
         self.assertEqual( self.p4.maxscanrows, 1000000, "maxscanrows" )
         self.assertEqual( self.p4.maxlocktime, 10000, "maxlocktime" )
+        self.assertEqual( self.p4.maxopenfiles, 1000, "maxopenfiles" )
+        self.assertEqual( self.p4.maxmemory, 2000, "maxmemory" )
         self.assertEqual( self.p4.password, "mypassword", "password" )
         self.assertEqual( self.p4.port, "myserver:1666", "port" )
         self.assertEqual( self.p4.tagged, 1, "tagged" )

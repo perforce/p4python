@@ -108,7 +108,7 @@ class PlatformInfo:
                 if unameOut.machine == 'arm64':
                     os.environ["MACOSX_DEPLOYMENT_TARGET"] = "12.6"
                 else:
-                    os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.12"
+                    os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.15"
 
                 arch = self.architecture(unameOut[4])
 
@@ -180,6 +180,8 @@ class PlatformInfo:
             return 'X86_64'
         elif str == 'sparc':
             return 'SPARC'
+        elif str == 'aarch64':
+            return 'ARM'
         elif re.match('arm.*', str):
             return "ARM"
 

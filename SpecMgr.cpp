@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#57 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#58 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -60,7 +60,7 @@ struct specdata {
     const char *type;
     const char *spec;
 } speclist[] = {
- 
+
     {
 	"branch",
 	"Branch;code:301;rq;ro;fmt:L;len:32;;"
@@ -148,6 +148,10 @@ struct specdata {
 	"Subgroups;code:404;type:wlist;len:32;opt:default;;"
 	"Owners;code:408;type:wlist;len:32;opt:default;;"
 	"Users;code:405;type:wlist;len:32;opt:default;;"
+    },
+    {
+	"hotfiles",
+	"HotFiles;code:1051;fmt:C;type:wlist;words:1;maxwords:3;len:64;opt:default;z;;"
     },
     {
 	"job",

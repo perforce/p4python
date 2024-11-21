@@ -7,7 +7,7 @@ from __future__ import print_function
     This uses the Python type P4API.P4Adapter, which is a wrapper for the
     Perforce ClientApi object.
     
-    $Id: //depot/main/p4-python/P4.py#112 $
+    $Id: //depot/main/p4-python/P4.py#114 $
     
     #*******************************************************************************
     # Copyright (c) 2007-2010, Perforce Software, Inc.  All rights reserved.
@@ -59,24 +59,34 @@ class P4Exception(Exception):
     def __init__(self, value):
         super().__init__(value)
         if isinstance(value, (list, tuple)) and len(value) > 2:
+            self.value = value[0]
+            self.warnings = value[2]
             if len(value[1]) > 0 or len(value[2]) > 0:
-                self.value = value[0]
                 self.errors = value[1]
-                self.warnings = value[2]
             else:
-                self.value = value[0]
                 self.errors = [re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])]
-                self.warnings = value[2]
         else:
             self.value = value
+            self.errors =self.warnings = None
 
     def __str__(self):
         if self.errors:
-            return str(self.errors[0])
+            if isinstance(self.errors, (list, tuple)):
+                return str(self.errors[0])
+            else:
+                return str(self.errors)
         elif self.warnings:
-            return str(self.warnings[0])
+            if isinstance(self.warnings, (list, tuple)):
+                return str(self.warnings[0])
+            else:
+                return str(self.warnings)
+        elif self.errors is None and self.warnings is None:
+            return str(self.value)
         else:
-            return re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])
+            if isinstance(self.value, (list, tuple)):
+                return re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])
+            else:
+                return str(self.value)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)!r})"
@@ -615,7 +625,7 @@ class P4(P4API.P4Adapter):
         flatArgs = self.__flatten(args)
 
         if self.logger:
-            self.logger.info("p4 " + " ".join(flatArgs))
+            self.logger.info("p4 " + " ".join(str(x) for x in flatArgs))
         
         # if encoding is set, translate to Bytes
         if hasattr(self,"encoding") and self.encoding and not self.encoding == 'raw':

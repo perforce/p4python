@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/PythonClientAPI.h#44 $
+ * $Id: //depot/main/p4-python/PythonClientAPI.h#45 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -103,6 +103,8 @@ public:
     int SetMaxResults( int v )		{ maxResults = v; return 0; }
     int SetMaxScanRows( int v )		{ maxScanRows = v; return 0; }
     int SetMaxLockTime( int v )		{ maxLockTime = v; return 0; }
+    int SetMaxOpenFiles( int v )	{ maxOpenFiles = v; return 0; }
+    int SetMaxMemory( int v )	    { maxMemory = v; return 0; }
 
     int SetCaseFolding( int v )		{ StrPtr::SetCaseFolding((StrPtr::CaseUse) v); return 0;}
 
@@ -154,6 +156,8 @@ public:
     int GetMaxResults()			{ return maxResults; }
     int GetMaxScanRows()		{ return maxScanRows; }
     int GetMaxLockTime()		{ return maxLockTime; }
+    int GetMaxOpenFiles()		{ return maxOpenFiles; }
+    int GetMaxMemory()		{ return maxMemory; }
     int GetDebug()			{ return debug.getDebug(); }
     int GetApiLevel()			{ return apiLevel; }
     int GetCaseFolding()		{ return (int) StrPtr::CaseUsage(); }
@@ -329,6 +333,8 @@ private:
     int			maxResults;
     int			maxScanRows;
     int			maxLockTime;
+    int			maxOpenFiles;
+    int			maxMemory;
 };
 
 #endif

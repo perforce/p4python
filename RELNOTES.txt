@@ -1,7 +1,7 @@
                             Release Notes for
                P4Python, Helix Core API for Python
 
-                             Version 2024.1
+                             Version 2024.2
 
 Introduction
 
@@ -23,6 +23,14 @@ Introduction
 
 --------------------------------------------------------------------------
 
+Important End-of-Life Notice
+
+    This major release of P4Python would be the last to provide wheels for and
+    test against Python 3.8. This is part of our commitment to focus on 
+    supported technology platforms
+
+--------------------------------------------------------------------------
+
 Installation
 
   Installation via pip
@@ -40,7 +48,7 @@ Installation
       python3 -m pip install --upgrade p4python
 
     P4Python is distributed as a binary wheels for Python 3.8, 3.9, 3.10,
-    3.11 and 3.12. In order for the binary wheel to be used, the ABI tag needs to
+    3.11, 3.12 and 3.13. In order for the binary wheel to be used, the ABI tag needs to
     match.This often requires updated pip, to do so issue:
       python3 -m pip install --upgrade pip
 
@@ -64,6 +72,9 @@ Installation
 
     Ubuntu 22.04      
         perforce-p4python3-python3.10
+    
+    Ubuntu 24.04      
+        perforce-p4python3-python3.12
 
   Installing P4Python for Maya.
 
@@ -106,13 +117,13 @@ Compatibility Statements
 
   API Compatibility
 
-    This release of P4Python requires at least 2024.1 Perforce API 
-    (2024.1/2596294). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2024.2 Perforce API 
+    (2024.2/2675662). Older releases will not compile and are not supported.
 
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.8, 3.9, 3.10, 3.11 and 3.12.
+    Python 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13.
 
     For detailed compatibility, please check the following table:
 
@@ -123,6 +134,7 @@ Compatibility Statements
     3.10           | 2022.1 or later
     3.11           | 2022.2 or later
     3.12           | 2023.1 or later
+    3.13           | 2024.2 or later
 
   OpenSSL Compatibility
 
@@ -138,15 +150,19 @@ Compatibility Statements
 
     This release is certified on the following platforms:
 
-    Windows (x86, x86_64)
-        Server 2016
+    Windows for Intel(x86, x86_64)
+        Server 2016, 2019, 2022
+        Windows 10, 11
     Mac OS
         11, 12 (x86_64)
         12, 13 (ARM64)
-    Linux (x86, x86_64)
-        Ubuntu 20.04, 22.04
+    Linux kernel 2.6+ for Intel(x86, x86_64)
+        Ubuntu 20.04, 22.04, 24.04
         CentOS 8
         Rocky Linux 9.1
+    Linux kernel 2.6+ for ARM(aarch64)
+        Ubuntu 20.04, 22.04, 24.04
+        Rocky Linux 9.4
 
     The above platforms are tested and subject to regression testing on a 
     frequent basis. Errors or bugs discovered in these platforms are prioritized
@@ -283,6 +299,42 @@ Key to symbols used in change notes below.
     * -- requires new P4Python
    ** -- requires new p4d server program
   *** -- requires new P4API
+
+--------------------------------------------------------------------------
+
+New functionalities in 2024.2 (2024.2/2682690) (2024/11/15)
+
+    #2677188 (Job #122598)
+        Built P4Python with P4API 2024.2 (2024.2/2675662)
+
+    #2670765 (Job #122603)
+        Added wheels & build support for Python 3.13
+
+    #2659612 (Job #122764)
+        Added Linux binary package for Ubuntu24
+        
+Bugs fixed in 2024.2 (2024.2/2682690) (2024/11/15)
+
+    #2669917 (Job #123092)
+        Fixed exception on joining non-string element in run args,
+        when logger is enabled.
+
+--------------------------------------------------------------------------
+
+New functionalities in 2024.1 Patch 1 (2024.1/2645203) (2024/08/27)
+
+    #2643104 (Job #119627)
+        Added wheels & build support for Linux ARM64/AARCH64 architecture.
+        
+Bugs fixed in 2024.1 Patch 1 (2024.1/2645203) (2024/08/27)
+
+    #2630486 (Job #121699)
+        Fixed error in P4.P4Exception class when creating object of class 
+        with single string parameter.
+        
+    #2630485 (Job #121721)
+        Implemented p4.maxopenfiles and p4.maxmemory group specs as P4 Class
+        instance attributes.
 
 --------------------------------------------------------------------------
 

@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#79 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#80 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -75,6 +75,8 @@ PythonClientAPI::PythonClientAPI()
     maxResults = 0;
     maxScanRows = 0;
     maxLockTime = 0;
+    maxOpenFiles = 0;
+    maxMemory = 0;
     prog = "unnamed p4-python script";
     apiLevel = atoi( P4Tag::l_client );
     enviro = new Enviro;
@@ -157,6 +159,8 @@ PythonClientAPI::intattribute_t PythonClientAPI::intattributes[] = {
 	{ "maxresults",		&PythonClientAPI::SetMaxResults,	&PythonClientAPI::GetMaxResults },
 	{ "maxscanrows",	&PythonClientAPI::SetMaxScanRows,	&PythonClientAPI::GetMaxScanRows },
 	{ "maxlocktime",	&PythonClientAPI::SetMaxLockTime,	&PythonClientAPI::GetMaxLockTime },
+	{ "maxopenfiles",	&PythonClientAPI::SetMaxOpenFiles,	&PythonClientAPI::GetMaxOpenFiles },
+	{ "maxmemory",	&PythonClientAPI::SetMaxMemory,	&PythonClientAPI::GetMaxMemory },
 	{ "exception_level",	&PythonClientAPI::SetExceptionLevel,	&PythonClientAPI::GetExceptionLevel },
 	{ "debug",		&PythonClientAPI::SetDebug,		&PythonClientAPI::GetDebug },
 	{ "track",		&PythonClientAPI::SetTrack,		&PythonClientAPI::GetTrack },
@@ -1234,6 +1238,8 @@ void PythonClientAPI::RunCmd(const char *cmd, ClientUser *ui, int argc, char * c
     if( maxResults  )	client.SetVar( "maxResults",  maxResults  );
     if( maxScanRows )	client.SetVar( "maxScanRows", maxScanRows );
     if( maxLockTime )	client.SetVar( "maxLockTime", maxLockTime );
+    if( maxOpenFiles )	client.SetVar( "maxOpenFiles", maxOpenFiles );
+    if( maxMemory)	client.SetVar( "maxMemory", maxMemory );
 
     // if progress is set, set the progress var
     if( ((PythonClientUser*)ui)->GetProgress() != Py_None )
