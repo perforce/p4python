@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/P4API.cpp#64 $
+ * $Id: //depot/main/p4-python/P4API.cpp#65 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -338,7 +338,7 @@ static PyObject * P4API_dvcs_init(P4Adapter * self, PyObject * args, PyObject * 
             return NULL;
 
 
-    auto_ptr<ServerHelperApi> personalServer( create_server(user, client, directory, &ui) );
+    unique_ptr<ServerHelperApi> personalServer( create_server(user, client, directory, &ui) );
 
     if( personalServer.get() == NULL)
 	return NULL;
@@ -400,7 +400,7 @@ static PyObject * P4API_dvcs_clone(P4Adapter * self, PyObject * args, PyObject *
 					 &progress))
 	return NULL;
 
-    auto_ptr<ServerHelperApi> personalServer( create_server(user, client, directory, &ui) );
+    unique_ptr<ServerHelperApi> personalServer( create_server(user, client, directory, &ui) );
 
     if( personalServer.get() == NULL)
 	return NULL;

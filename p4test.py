@@ -508,7 +508,7 @@ class TestP4(TestP4Python):
                     return "at"
 
                 def actionResolve(self, mergeData):
-                    self.t.assertEqual(mergeData.merge_action, "(text+wx)",
+                    self.t.assertEqual(mergeData.merge_action, "(text+Dwx)",
                         "Unexpected mergeAction: '%s'" % mergeData.merge_action  )
                     self.t.assertEqual(mergeData.yours_action, "(text+w)",
                         "Unexpected mergeAction: '%s'" % mergeData.yours_action  )

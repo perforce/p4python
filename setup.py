@@ -43,7 +43,6 @@ from distutils.command.sdist import sdist as sdist_module
 
 import os, os.path, sys, re, shutil, stat, subprocess
 
-from tools.P4APIFtp import P4APIFtp
 from tools.PlatformInfo import PlatformInfo
 from tools.VersionInfo import VersionInfo
 from tools.P4APIHttps import P4APIHttps
@@ -167,7 +166,7 @@ class p4build_ext(build_ext_module):
 
         print("Looking for P4 API {0} for SSL {1} on https://ftp.perforce.com".format(api_ver, ssl_ver))
 
-        g_major, g_minor = P4APIFtp.get_glib_ver(self)
+        g_major, g_minor = P4APIHttps.get_glib_ver(self)
         p4https = P4APIHttps()
         url = p4https.get_url(g_minor, ssl_ver, api_ver)
         api_dir, api_tarball= p4https.get_file(url)
@@ -190,23 +189,36 @@ class p4build_ext(build_ext_module):
 
     @staticmethod
     def build_ssl_lib(ssl_ver):
-
         # not for windows
         # get the openssl version needed
         #   Now that p4api needs to know the ssl version, this call gets recursive.
         #    ssl_ver = self.get_ssl_version_from_p4api(self)
+
+        # Default OpenSSL version if none is provided
         if not ssl_ver:
-            ssl_ver = "1.1.1"    # default to latest ssl version
+            ssl_ver = "3.0.2"  # Default to the latest supported SSL version
 
-        # try to download the SSL source from the ftp site
-        print("Downloading SSL {0} source from ftp.openssl.org".format(ssl_ver))
-        (ssl_src_dir, tarball) = P4APIFtp("ssl").get_ssl_src(ssl_ver)
+        # Check environment variable for build_ssl
+        # If set to "no", skip the build process
+        # If set to "yes", proceed with the build process
+        # If not set, default to "no"
+        build_ssl = os.getenv("P4PYTHON_BUILD_SSL", "no").lower()
+        if build_ssl != "yes":
+            print("Skipping OpenSSL build as per environment variable.")
+            return "", "", "", False
 
-        print("Building SSL source in {0}".format(ssl_src_dir))
-        ssl_from_ftp = True
-        ssl_lib_dir = P4APIFtp("ssl").build_ssl(ssl_src_dir)
+        # Proceed to download and build OpenSSL
+        print(f"Downloading OpenSSL {ssl_ver} source from https://www.openssl.org/source/")
+        ssl_src_dir, tarball = P4APIHttps().get_ssl_src(ssl_ver)
 
-        return ssl_lib_dir, ssl_src_dir, tarball, ssl_from_ftp
+        if not ssl_src_dir:
+            print("Failed to download or extract OpenSSL source.")
+            return "", "", "", False
+
+        print(f"Building OpenSSL source in {ssl_src_dir}")
+        ssl_lib_dir = P4APIHttps().build_ssl(ssl_src_dir)
+
+        return ssl_lib_dir, ssl_src_dir, tarball, True
 
     @staticmethod
     def check_installed_ssl():
@@ -244,17 +256,33 @@ class p4build_ext(build_ext_module):
                 for p in os.environ["PATH"].split(os.pathsep):
                     pathToFile = os.path.join(p, "openssl")
                     if os.path.exists(pathToFile) and os.access(pathToFile, os.X_OK):
-                        entry = subprocess.check_output("ldd {0} | grep libssl".format(pathToFile),
-                                                        executable="/bin/bash", shell="True")
-                        if entry is not False:
-                            libpath = os.path.dirname(entry.split()[2])
+                        try:
+                            output = subprocess.check_output(["ldd", pathToFile], text=True)
+                            for line in output.splitlines():
+                                if "libssl" in line:
+                                    parts = line.split()
+                                    if len(parts) >= 3:
+                                        libpath = os.path.dirname(parts[2])
+                                        break
+                            else:
+                                raise Exception(f"libssl not found in ldd output for {pathToFile}")
 
-                        if os.path.exists(libpath) and os.path.isdir(libpath):
-                            print("Found installed SSL libraries " + libpath.decode('utf-8'))
-                            return libpath, ver_only
-                        else:
+                            if os.path.exists(libpath) and os.path.isdir(libpath):
+                                print("Found installed SSL libraries " + libpath)
+                                return libpath, ver_only
+                            else:
+                                print("****************************************************", file=sys.stderr)
+                                print(f"Calculated path {libpath} for SSL does not exist", file=sys.stderr)
+                                print("****************************************************", file=sys.stderr)
+                                return "", ""
+                        except subprocess.CalledProcessError as e:
                             print("****************************************************", file=sys.stderr)
-                            print("Calculated path {0} for SSL does not exist".format(libpath), file=sys.stderr)
+                            print(f"Error running ldd on {pathToFile}: {e}", file=sys.stderr)
+                            print("****************************************************", file=sys.stderr)
+                            return "", ""
+                        except Exception as e:
+                            print("****************************************************", file=sys.stderr)
+                            print(f"Error processing ldd output: {e}", file=sys.stderr)
                             print("****************************************************", file=sys.stderr)
                             return "", ""
             else:
@@ -281,14 +309,17 @@ class p4build_ext(build_ext_module):
                 # check for a version of SSL already installed via 'openssl version'
                 self.ssl, ssl_ver = self.check_installed_ssl()  # return libpath or None
 
-                # we only support 1.0.2 or 1.1.1 using 2019.1 p4api
-                if not (("1.0.2" in ssl_ver) or ("1.1.1" in ssl_ver) or ("3.0" in ssl_ver)):
+                # we only support 1.1.1 or 3 using 2019.1 p4api
+                if not(("1.1.1" in ssl_ver) or (ssl_ver.startswith("3"))):
                     self.ssl = ""
 
                 if not self.ssl:
                     # try downloading and building ssl
                     if self.is_super():
                         (self.ssl, ssl_src, ssl_tarball, loaded_ssl_from_ftp) = self.build_ssl_lib(ssl_ver)
+                        if not self.ssl:
+                            print("OpenSSL build was skipped or failed.")
+                            raise Exception("Cannot build P4Python without SSL support.")
                         p4_ssl_dir = self.ssl
                         p4_ssl_ver = ssl_ver
                     else:

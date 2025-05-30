@@ -7,7 +7,7 @@ from __future__ import print_function
     This uses the Python type P4API.P4Adapter, which is a wrapper for the
     Perforce ClientApi object.
     
-    $Id: //depot/main/p4-python/P4.py#114 $
+    $Id: //depot/main/p4-python/P4.py#115 $
     
     #*******************************************************************************
     # Copyright (c) 2007-2010, Perforce Software, Inc.  All rights reserved.
@@ -762,28 +762,44 @@ class P4(P4API.P4Adapter):
         result = []
         if raw:
             debugResult = []
+            file_contents = None
+
+            def flush_file_contents():
+                nonlocal file_contents
+                if file_contents is None:
+                    return
+                elif len(file_contents) == 0:
+                    # If no file contents, assume string (text)
+                    result.append("")
+                else:
+                    # Ensure all elements in file_contents are of the same type
+                    content_type = type(file_contents[0])
+                    if any(not isinstance(x, content_type) for x in file_contents):
+                        raise TypeError("Mixed types in file content.")
+                    if content_type is bytes:
+                        result.append(b"".join(file_contents))
+                    else:
+                        result.append("".join(file_contents))
+                file_contents = None
+
             for line in raw:
                 if isinstance(line, dict):
+                    flush_file_contents()
                     result.append(line)
                     if logger:
                         debugResult.append(line)
-                    result.append("")
+                    file_contents = []
                 else:
-                    # to support encoding for Python 3, we have to do a little dance
-                    # we cannot add bytes to the str "", but we expect that all lines
-                    # are either str or bytes. So if we encounter bytes, we replace the content
-                    try:
-                        result[-1] += line
-                    except TypeError:
-                        if type(line) == bytes and type(result[-1]) == str and result[-1] == "":
-                            result[-1] = line
-                        else:
-                            raise
+                    if file_contents is None:
+                        file_contents = []
+                    file_contents.append(line)
+
+            flush_file_contents()
+
             if logger:
                 logger.debug(debugResult)
-            return result
-        else:
-            return []
+
+        return result
 
     def run_resolve(self, *args, **kargs):
         if self.resolver:

@@ -1,7 +1,7 @@
                             Release Notes for
-               P4Python, Helix Core API for Python
+                       P4Python, P4 API for Python
 
-                             Version 2024.2
+                             Version 2025.1
 
 Introduction
 
@@ -23,11 +23,22 @@ Introduction
 
 --------------------------------------------------------------------------
 
+Important Product Rebrand Notice
+
+    Helix Core is now P4
+    Perforce has a new look and logo that reflects our place in DevOps
+    workflows. As part of these changes, Helix Core is now P4. Name updates
+    and new icons to align with the P4 branding will be rolled out soon.
+    To learn more, see:
+        https://www.perforce.com/blog/vcs/introducing-the-p4-platform
+
+--------------------------------------------------------------------------
+
 Important End-of-Life Notice
 
-    This major release of P4Python would be the last to provide wheels for and
-    test against Python 3.8. This is part of our commitment to focus on 
-    supported technology platforms
+    This release of P4Python would be the last to support and test against 
+    Python 3.9, which is in EOL status. This is part of our commitment to 
+    focus on supported technology platforms.
 
 --------------------------------------------------------------------------
 
@@ -47,9 +58,10 @@ Installation
 
       python3 -m pip install --upgrade p4python
 
-    P4Python is distributed as a binary wheels for Python 3.8, 3.9, 3.10,
-    3.11, 3.12 and 3.13. In order for the binary wheel to be used, the ABI tag needs to
-    match.This often requires updated pip, to do so issue:
+    P4Python is distributed as a binary wheels for Python 3.9, 3.10,
+    3.11, 3.12 and 3.13. In order for the binary wheel to be used, the ABI 
+    tag needs to match. This often requires updated pip, to do so issue:
+
       python3 -m pip install --upgrade pip
 
   Installation using Linux binary packages
@@ -112,24 +124,23 @@ Compatibility Statements
 
   Server Compatibility
 
-    You can use any release of P4Python with any release of the
-    Perforce server later than 2001.1
+    This release of P4Python supports the 2025.1 P4 Server.
+    Older releases might work but are not supported.
 
   API Compatibility
 
-    This release of P4Python requires at least 2024.2 Perforce API 
-    (2024.2/2675662). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2025.1 P4 C/C++ API
+    (2025.1/2761706). Older releases will not compile and are not supported.
 
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13.
+    Python 3.9, 3.10, 3.11, 3.12 and 3.13.
 
     For detailed compatibility, please check the following table:
 
     Python Release | P4Python Release
     ======================================
-    3.8            | 2020.1 or later
     3.9            | 2021.1 or later
     3.10           | 2022.1 or later
     3.11           | 2022.2 or later
@@ -139,11 +150,11 @@ Compatibility Statements
   OpenSSL Compatibility
 
     To build P4Python with encrypted communication support, you must use the
-    version of OpenSSL that Perforce C/C++ API has been built against.
+    version of OpenSSL that P4 C/C++ API has been built against.
 
-    Beginning with the 2017.1 release of the Helix C/C++ API, the dependency on
+    Beginning with the 2017.1 release of the P4 C/C++ API, the dependency on
     OpenSSL is now enforced and the SSL stub library has been removed.
-    Executables linked against the P4API libraries must also be linked against
+    Executables linked against the P4 C/C++ API libraries must also be linked against
     real OpenSSL libraries: The latest 3.0.x or 1.1.1 patch is recommended
 
   Platform Compatibility
@@ -172,33 +183,29 @@ Compatibility Statements
   Compiler Compatibility
 
     To build P4Python from source, you must use a version of P4Python that has
-    been compiled with the same compiler used to build the Perforce C++ API.
+    been compiled with the same compiler used to build the P4 C/C++ API.
     For most platforms, use gcc/g++.
 
-    On Linux since the 2019.1 P4API release, due to a change in library 
+    On Linux since the 2019.1 P4 C/C++ API release, due to a change in library 
     dependencies, the source code requires gcc 6 or above to be used.
 
     Attempting to use a different compiler or a different version of the
     compiler will cause link errors due to differences in name handling.
 
-    For more information about P4API compiler requirements, please see this link:
+    For more information about P4 C/C++ API compiler requirements, please see this link:
     https://www.perforce.com/manuals/p4api/Content/P4API/client.programming.compiling.html
-
-    On Windows platforms, the P4Python installer is build with Python from
-    python.org. The installer for Python 3.x was built with Visual Studio 2017
-    and Visual Studio 2008 for Python 2.
 
     To run Python 3.x on Windows, it might be necessary to install the
     redistributable version of the 2017 libraries, vc_redist.x64.exe or
     vc_redist.x86.exe, respectively for 64 bit and 32 bit.
-    Without these libraries the DLL for P4API will not load into Python and
+    Without these libraries the DLL for P4 C/C++ API will not load into Python and
     the command 'import P4' will fail.
 
   Known Limitations
 
-    The Perforce client-server protocol is not designed to support
+    The P4 client-server protocol is not designed to support
     multiple concurrent queries over the same connection. For this
-    reason, multi-threaded applications using the C++ API or the
+    reason, multi-threaded applications using the P4 C/C++ API or the
     script APIs (P4Perl, P4Ruby, etc.) should ensure that a
     separate connection is used for each thread or that only one
     thread may use a shared connection at a time.
@@ -212,7 +219,7 @@ Compatibility Statements
 
 Attributes
 
-  Perforce P4Python provides the attributes listed below. Attributes
+  P4Python provides the attributes listed below. Attributes
   can be set in the P4() constructor or by using their setters and
   getters. For example:
 
@@ -277,7 +284,7 @@ Attributes
 
 Tagged mode and form parsing
 
-  In Perforce P4Python 2007.3 and later, form parsing and tagged
+  In P4Python 2007.3 and later, form parsing and tagged
   output are enabled by default. (In Public Depot P4Python,
   tagged output and form parsing mode were disabled by default,
   but most scripts enabled them immediately.)
@@ -297,8 +304,36 @@ Tagged mode and form parsing
 Key to symbols used in change notes below.
 
     * -- requires new P4Python
-   ** -- requires new p4d server program
-  *** -- requires new P4API
+   ** -- requires new P4 server program
+  *** -- requires new P4 C/C++ API
+
+--------------------------------------------------------------------------
+
+New functionalities in 2025.1 (2025.1/2767466) (2025/05/21)
+
+    #2757777 (Job #125785)
+        Built P4Python with P4 C/C++ API 2025.1 (2025.1/2761706)
+        
+Bugs fixed in 2025.1
+
+    #2744582 (Job #123978)
+        Eliminated hardcoded bash paths, improving portability and flexibility.
+        Replaced shell=True with safer subprocess calls using command lists.
+
+    #2743827 (Job #124153)
+        Updated P4Python build behavior to disable silent OPENSSL installation. 
+        Users must now explicitly set the env variable "P4PYTHON_BUILD_SSL=yes"
+        to enable OPENSSL support during build.
+        If enabled, OPENSSL sources will be downloaded from the HTTPS-based 
+        URL: https://www.openssl.org/source.
+        Added the support to build P4Python with OPENSSL 3.x.
+
+    #2705918 (Job #124154)
+        Change auto_ptr into unique_ptr as auto_ptr is obsoleted from C++11.
+
+    #2743928 (Job #124332)
+        Fixed exponential rise of the time needed to run p4.run_print() with 
+        growing file size.
 
 --------------------------------------------------------------------------
 

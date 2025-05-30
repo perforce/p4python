@@ -34,21 +34,37 @@
       export apidir=<Perforce C++ API absolute path>
       export ssl=<OpenSSL library path>
       ```
+
+   5. **[Optional] Control SSL Build Behavior**
+
+      By default, if SSL is not available in the root environment, P4Python will attempt to build SSL silently during installation. 
+      Since `pip install` is non-interactive, users cannot choose whether to build SSL or not during the process.
+
+      To explicitly control this behavior, you can use the `P4PYTHON_BUILD_SSL` environment variable as a prefix to the install command:
+
+      - If set to `"no"`, the build process will skip building SSL.
+      - If set to `"yes"`, the build process will proceed to build SSL if needed.
+      - If not set, the default is `"no"` (SSL will not be built).
+
+      **Example usage:**
+      ```
+      P4PYTHON_BUILD_SSL=yes python3 -m pip install .
+      ```
    
-   5. To install P4Python, execute the following command from P4Python source code directory:
+   6. To install P4Python, execute the following command from P4Python source code directory:
       
       ```
       python3 -m pip install .
       ```
       **Note:** In order to cleanly reinstall P4Python, remove the directory named "build".
 
-   6. To test your P4Python install, execute p4test.py:
+   7. To test your P4Python install, execute p4test.py:
       ```
       python3 p4test.py
       ```
 		 **Note:** This test requires the Perforce server executable p4d 17.1 or better to be installed and in the PATH.
 
-   7. To build P4Python wheel, execute the following command:
+   8. To build P4Python wheel, execute the following command:
       
       ```
       python3 -m pip wheel . -w dist

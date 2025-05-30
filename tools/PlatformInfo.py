@@ -190,4 +190,4 @@ class PlatformInfo:
         match = pattern.match(ssl_ver_string)
         if match:
             return match.group(1), match.group(2), match.group(3)
-        return "1", "1", "1"
+        return "3", "0", "2"

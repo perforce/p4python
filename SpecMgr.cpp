@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#58 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#59 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -60,7 +60,7 @@ struct specdata {
     const char *type;
     const char *spec;
 } speclist[] = {
-
+ 
     {
 	"branch",
 	"Branch;code:301;rq;ro;fmt:L;len:32;;"
@@ -140,6 +140,7 @@ struct specdata {
 	"MaxOpenFiles;code:413;type:word;len:12;;"
 	"MaxMemory;code:NNN;type:word;len:12;;"
 	"Timeout;code:406;type:word;len:12;;"
+	"IdleTimeout;code:NNN;type:word;len:12;;"
 	"PasswordTimeout;code:409;type:word;len:12;;"
 	"LdapConfig;code:410;type:line;len:128;;"
 	"LdapSearchQuery;code:411;type:line;len:128;;"
