@@ -1,7 +1,7 @@
                             Release Notes for
                        P4Python, P4 API for Python
 
-                             Version 2025.1
+                             Version 2025.2
 
 Introduction
 
@@ -34,14 +34,6 @@ Important Product Rebrand Notice
 
 --------------------------------------------------------------------------
 
-Important End-of-Life Notice
-
-    This release of P4Python would be the last to support and test against 
-    Python 3.9, which is in EOL status. This is part of our commitment to 
-    focus on supported technology platforms.
-
---------------------------------------------------------------------------
-
 Installation
 
   Installation via pip
@@ -58,8 +50,8 @@ Installation
 
       python3 -m pip install --upgrade p4python
 
-    P4Python is distributed as a binary wheels for Python 3.9, 3.10,
-    3.11, 3.12 and 3.13. In order for the binary wheel to be used, the ABI 
+    P4Python is distributed as a binary wheels for Python 3.10,
+    3.11, 3.12, 3.13 and 3.14. In order for the binary wheel to be used, the ABI 
     tag needs to match. This often requires updated pip, to do so issue:
 
       python3 -m pip install --upgrade pip
@@ -69,23 +61,38 @@ Installation
     P4Python can be installed via Linux packages available from:
     https://www.perforce.com/perforce-packages
 
-    Following packages are available:
+    The easiest way to install P4Python is using the meta-package:
 
-    RHEL/Rocky Linux 8      
+    For RHEL/Rocky Linux
+        sudo yum install perforce-p4python3
+
+    For Ubuntu/Debian
+        sudo apt-get install perforce-p4python3
+
+    The perforce-p4python3 meta-package automatically installs the correct 
+    version for your system's default Python 3 installation.
+
+    If you need to install P4Python for a specific Python version, 
+    the following packages are available:
+
+    RHEL/Rocky Linux 8
         perforce-p4python3-python3.8
         perforce-p4python3-python3.9
-    
+
     RHEL/Rocky Linux 9
         perforce-p4python3-python3.9
 
-    Ubuntu 20.04      
+    RHEL/Rocky Linux 10
+        perforce-p4python3-python3.12
+
+    Ubuntu 20.04
         perforce-p4python3-python3.8
         perforce-p4python3-python3.9
 
-    Ubuntu 22.04      
+    Ubuntu 22.04
         perforce-p4python3-python3.10
-    
-    Ubuntu 24.04      
+
+    Ubuntu 24.04
         perforce-p4python3-python3.12
 
   Installing P4Python for Maya.
@@ -124,28 +131,28 @@ Compatibility Statements
 
   Server Compatibility
 
-    This release of P4Python supports the 2025.1 P4 Server.
+    This release of P4Python supports the 2025.2 P4 Server.
     Older releases might work but are not supported.
 
   API Compatibility
 
-    This release of P4Python requires at least 2025.1 P4 C/C++ API
-    (2025.1/2761706). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2025.2 P4 C/C++ API
+    (2025.2/2852709). Older releases will not compile and are not supported.
 
   Python Compatibility
 
     This release of P4Python is supported building from source with 
-    Python 3.9, 3.10, 3.11, 3.12 and 3.13.
+    Python 3.10, 3.11, 3.12, 3.13 and 3.14.
 
     For detailed compatibility, please check the following table:
 
     Python Release | P4Python Release
     ======================================
-    3.9            | 2021.1 or later
     3.10           | 2022.1 or later
     3.11           | 2022.2 or later
     3.12           | 2023.1 or later
     3.13           | 2024.2 or later
+    3.14           | 2025.2 or later
 
   OpenSSL Compatibility
 
@@ -155,7 +162,7 @@ Compatibility Statements
     Beginning with the 2017.1 release of the P4 C/C++ API, the dependency on
     OpenSSL is now enforced and the SSL stub library has been removed.
     Executables linked against the P4 C/C++ API libraries must also be linked against
-    real OpenSSL libraries: The latest 3.0.x or 1.1.1 patch is recommended
+    real OpenSSL libraries: The latest 3.x.x or 1.1.1 patch is recommended
 
   Platform Compatibility
 
@@ -170,10 +177,10 @@ Compatibility Statements
     Linux kernel 2.6+ for Intel(x86, x86_64)
         Ubuntu 20.04, 22.04, 24.04
         CentOS 8
-        Rocky Linux 9.1
+        Rocky Linux 9.1, 10
     Linux kernel 2.6+ for ARM(aarch64)
         Ubuntu 20.04, 22.04, 24.04
-        Rocky Linux 9.4
+        Rocky Linux 9.4, 10
 
     The above platforms are tested and subject to regression testing on a 
     frequent basis. Errors or bugs discovered in these platforms are prioritized
@@ -309,11 +316,41 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+New functionalities in 2025.2 (2025.2/2863679) (2025/12/03)
+
+    #2842576 (Job #128780)
+        Built P4Python with P4API 2025.2 (2025.2/2852709)
+    
+    #2846296 (Job #128672)
+        Added support for python version 3.14
+
+    #2836086 (Job #110913)
+        Added support for per-file CreateProgress in the Python API 
+        by implementing CanParallelProgress() in PythonClientUser
+        enabling parallel progress operations.
+
+    #2832930 (Job #127506)
+        Added support for RPM packages on RHEL 10, Rocky Linux 10
+        and other EL10-compatible distributions.
+
+Bugs fixed in 2025.2
+
+    #2837109 (Job #124136)
+        run_merge() now correctly reflects the merge tool’s exit code 
+        instead of always returning True. 
+        
+    #2850324 (Job #129466)
+        Fixed an issue where P4Python held the Python GIL during blocking 
+        network operations in connect() and disconnect(), preventing other 
+        threads and async workflows from running.
+
+--------------------------------------------------------------------------
+
 New functionalities in 2025.1 (2025.1/2767466) (2025/05/21)
 
     #2757777 (Job #125785)
         Built P4Python with P4 C/C++ API 2025.1 (2025.1/2761706)
-        
+    
 Bugs fixed in 2025.1
 
     #2744582 (Job #123978)

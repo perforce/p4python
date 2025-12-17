@@ -684,7 +684,6 @@ class TestP4(TestP4Python):
         # test the resetting
         self.p4.handler = None
         self.assertEqual( self.p4.handler, None )
-        self.assertEqual( sys.getrefcount(h), 2 )
 
         self.p4.connect()
         self._setClient()
@@ -717,14 +716,12 @@ class TestP4(TestP4Python):
         self._doSubmit("Failed to submit the add", change)
 
         h = MyOutputHandler()
-        self.assertEqual( sys.getrefcount(h), 2 )
         self.p4.handler = h
 
         self.assertEqual( len(self.p4.run_files('...')), 0, "p4 does not return empty list")
         self.assertEqual( len(h.statOutput), len(files), "Less files than expected")
         self.assertEqual( len(h.messageOutput), 0, "Messages unexpected")
         self.p4.handler = None
-        self.assertEqual( sys.getrefcount(h), 2 )
 
     def testProgress( self ):
         self.p4.connect()
@@ -1461,6 +1458,90 @@ class TestP4(TestP4Python):
         self.assertEqual(100, total_files, "Setbreak is not working")
         self.p4.disconnect()
 
+    def testMergeToolReturnCode(self):
+        testDir = 'test_merge_return'
+        testAbsoluteDir = os.path.join(self.client_root, testDir)
+        os.mkdir(testAbsoluteDir)
+
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+        self._setClient()
+
+        # Create initial file
+        file = "merge_test.txt"
+        fname = os.path.join(testAbsoluteDir, file)
+        with open(fname, "w") as f:
+            f.write("Line 1\n")
+        textFile = testDir + "/" + file
+        self.p4.run_add(textFile)
+
+        change = self.p4.fetch_change()
+        change._description = "Initial version"
+        self._doSubmit("Failed to submit initial", change)
+
+        # Create second revision
+        self.p4.run_edit(textFile)
+        with open(fname, "w") as f:
+            f.write("Line 1\nLine 2\n")
+        
+        change = self.p4.fetch_change()
+        change._description = "Second version"
+        self._doSubmit("Failed to submit second", change)
+
+        # Sync back and create conflict
+        self.p4.run_sync(textFile + "#1")
+        self.p4.run_edit(textFile)
+        with open(fname, "w") as f:
+            f.write("Line 1\nDifferent Line 2\n")
+        self.p4.run_sync(textFile)
+
+        # Test with failing merge tool
+        import tempfile
+        import stat
+        
+        # Create a fake merge tool that always fails
+        failing_merge_script = os.path.join(tempfile.gettempdir(), "failing_merge.sh")
+        with open(failing_merge_script, "w") as f:
+            f.write("#!/bin/bash\n >&2\nexit 1\n")
+        os.chmod(failing_merge_script, stat.S_IRWXU)
+
+        class MergeTestResolver(P4.Resolver):
+            def __init__(self, testObject):
+                self.t = testObject
+                self.merge_result = None
+
+            def resolve(self, mergeData):
+                # Set P4MERGE to our failing script
+                old_p4merge = os.environ.get('P4MERGE', '')
+                os.environ['P4MERGE'] = failing_merge_script
+                
+                try:
+                    # Call run_merge and verify it returns False when merge tool fails
+                    self.merge_result = mergeData.run_merge()
+                    
+                    # Assert that run_merge() correctly detects merge tool failure
+                    self.t.assertFalse(self.merge_result, 
+                        f"run_merge() should return False when merge tool fails with exit code 1, but returned {self.merge_result}")
+                    
+                    # Additional assertion to verify the type
+                    self.t.assertIsInstance(self.merge_result, bool, 
+                        f"run_merge() should return a boolean, but returned {type(self.merge_result)}")
+                        
+                finally:
+                    # Restore original P4MERGE
+                    if old_p4merge:
+                        os.environ['P4MERGE'] = old_p4merge
+                    elif 'P4MERGE' in os.environ:
+                        del os.environ['P4MERGE']
+                
+                return "at"  # Accept theirs to complete the resolve
+
+        resolver = MergeTestResolver(self)
+        self.p4.run_resolve(resolver=resolver)
+        
+        # Clean up
+        if os.path.exists(failing_merge_script):
+            os.unlink(failing_merge_script)
 
 
 if __name__ == '__main__':

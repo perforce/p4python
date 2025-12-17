@@ -23,7 +23,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- $Id: //depot/main/p4-python/SpecMgr.cpp#59 $
+ $Id: //depot/main/p4-python/SpecMgr.cpp#60 $
  *******************************************************************************/
 
 /*******************************************************************************
@@ -116,6 +116,7 @@ struct specdata {
 	"Backup;code:319;type:select;len:10;val:enable/disable;;"
 	"View;code:311;fmt:C;type:wlist;words:2;len:64;;"
 	"ChangeView;code:317;type:llist;len:64;;"
+	"LimitView;code:320;fmt:C;type:llist;len:64;;"
     },
     {
 	"depot",
@@ -241,6 +242,7 @@ struct specdata {
 	"LastPush;code:859;fmt:L;len:10;;"
 	"DepotMap;code:860;type:wlist;words:2;len:64;;"
 	"ArchiveLimits;code:862;type:wlist;words:2;len:64;;"
+	"RemoteCharset;code:863;opt:optional;type:line;len:32;;"
     },
     {
 	"repo",

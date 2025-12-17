@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/PythonClientUser.h#19 $
+ * $Id: //depot/main/p4-python/PythonClientUser.h#20 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -64,6 +64,7 @@ public:
 
     virtual ClientProgress *CreateProgress(int);
     virtual int ProgressIndicator();
+    virtual int CanParallelProgress() override { return 1; }
 
     virtual void Finished();
 

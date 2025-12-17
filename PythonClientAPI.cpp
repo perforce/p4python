@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#80 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#81 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -707,7 +707,12 @@ PyObject * PythonClientAPI::ConnectOrReconnect()
     Error e;
 
     ResetFlags();
-    client.Init( &e );
+
+    {
+        ReleasePythonLock guard;    // Release GIL during connect
+        client.Init( &e );
+    }
+    
     if ( e.Test() && exceptionLevel ) {
 	Except( "P4.connect()", &e );
 	return NULL;
@@ -751,7 +756,12 @@ PyObject * PythonClientAPI::Disconnect()
     }
     
     Error	e;
-    client.Final( &e );
+
+    {
+        ReleasePythonLock guard;    // Release GIL during disconnect
+        client.Final( &e );
+    }
+    
     ResetFlags();
     
     // Clear the specdef cache.
