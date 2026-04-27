@@ -173,7 +173,7 @@ Compatibility Statements
         Windows 10, 11
     Mac OS
         11, 12 (x86_64)
-        12, 13 (ARM64)
+        12, 13, 14, 15, 26 (ARM64)
     Linux kernel 2.6+ for Intel(x86, x86_64)
         Ubuntu 20.04, 22.04, 24.04
         CentOS 8
