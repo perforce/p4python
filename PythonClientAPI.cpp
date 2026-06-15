@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#81 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#82 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -1187,13 +1187,15 @@ void PythonClientAPI::Except( const char *func, const char *msg )
     if( apiLevel < 68 )
 	PyErr_SetString(P4Error, m.Text() );
     else {
-	// return a list with three elements:
-	// the string value, the list of errors and list of warnings
+	// return a list with four elements:
+	// the string value, the list of errors, list of warnings,
+	// and the list of P4Message objects
 	// P4Exception will sort out what's what
-	PyObject * list = PyList_New(3);
+	PyObject * list = PyList_New(4);
 	PyList_SET_ITEM(list, 0, CreatePythonString(m.Text()));
 	PyList_SET_ITEM(list, 1, ui.GetResults().GetErrors());
 	PyList_SET_ITEM(list, 2, ui.GetResults().GetWarnings());
+	PyList_SET_ITEM(list, 3, ui.GetResults().GetMessages());
 
 	PyErr_SetObject(P4Error, list);
     Py_DECREF(list);

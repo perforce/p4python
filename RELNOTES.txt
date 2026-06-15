@@ -1,7 +1,7 @@
                             Release Notes for
                        P4Python, P4 API for Python
 
-                             Version 2025.2
+                             Version 2026.1
 
 Introduction
 
@@ -20,6 +20,18 @@ Introduction
 
     >>> import P4
     >>> print(P4.P4.identify())
+
+--------------------------------------------------------------------------
+
+Important End-of-Life Notice
+
+    This major release of P4Python would be the last to provide wheels for and
+    test against Windows 10. This is part of our commitment to focus on
+    supported technology platforms.
+
+    This release of P4Python would be the last to support and test against
+    Python 3.10, which is in EOL status. This is part of our commitment to
+    focus on supported technology platforms.
 
 --------------------------------------------------------------------------
 
@@ -131,13 +143,13 @@ Compatibility Statements
 
   Server Compatibility
 
-    This release of P4Python supports the 2025.2 P4 Server.
+    This release of P4Python supports the 2026.1 P4 Server.
     Older releases might work but are not supported.
 
   API Compatibility
 
-    This release of P4Python requires at least 2025.2 P4 C/C++ API
-    (2025.2/2852709). Older releases will not compile and are not supported.
+    This release of P4Python requires at least 2026.1 P4 C/C++ API
+    (2026.1/2951233). Older releases will not compile and are not supported.
 
   Python Compatibility
 
@@ -162,24 +174,24 @@ Compatibility Statements
     Beginning with the 2017.1 release of the P4 C/C++ API, the dependency on
     OpenSSL is now enforced and the SSL stub library has been removed.
     Executables linked against the P4 C/C++ API libraries must also be linked against
-    real OpenSSL libraries: The latest 3.x.x or 1.1.1 patch is recommended
+    real OpenSSL libraries. The 2026.1 server requires OpenSSL 3.x.x. 
+    It is recommended to use the latest available patch version.
 
   Platform Compatibility
 
     This release is certified on the following platforms:
 
     Windows for Intel(x86, x86_64)
-        Server 2016, 2019, 2022
+        Server 2016, 2019, 2022, 2025
         Windows 10, 11
     Mac OS
         11, 12 (x86_64)
         12, 13, 14, 15, 26 (ARM64)
     Linux kernel 2.6+ for Intel(x86, x86_64)
-        Ubuntu 20.04, 22.04, 24.04
-        CentOS 8
+        Ubuntu 22.04, 24.04
         Rocky Linux 9.1, 10
     Linux kernel 2.6+ for ARM(aarch64)
-        Ubuntu 20.04, 22.04, 24.04
+        Ubuntu 22.04, 24.04
         Rocky Linux 9.4, 10
 
     The above platforms are tested and subject to regression testing on a 
@@ -313,6 +325,37 @@ Key to symbols used in change notes below.
     * -- requires new P4Python
    ** -- requires new P4 server program
   *** -- requires new P4 C/C++ API
+
+--------------------------------------------------------------------------
+
+New functionalities in 2026.1 (2026.1/2974490) (2026/06/11)
+
+    #2948815 (Job #133655) * ** ***
+        Built P4Python with P4 C/C++ API 2026.1
+
+    #2917960 (Job #115698)
+        P4Exception now exposes P4Message fields including severity, generic
+        error code, message ID, and format arguments for detailed error handling
+        and diagnostics.
+
+    #2918074 (Job #129436)
+        Added Windows wheel tests for Python 3.14. Python 3.14 package is now
+        available on chocolatey for Windows build environments.
+
+    #2948338 (Job #133116)
+        Exposed user, password, and client as settable attributes on the P4 object,
+        allowing dynamic credential and workspace switching without environment variables
+        or subprocess invocation.
+
+    (Job #134241)
+        Added support for Windows Server 2025
+
+Bugs fixed in 2026.1 (2026.1/2974490) (2026/06/11)
+
+    #2915172 (Job #130810)
+        Fixed duplicate results from iterate_groups() which returned the same
+        group multiple times based on the number of users in that group. Now
+        deduplicates group rows by group name before fetching specs.
 
 --------------------------------------------------------------------------
 

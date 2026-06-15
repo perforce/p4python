@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/P4API.cpp#65 $
+ * $Id: //depot/main/p4-python/P4API.cpp#66 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -720,7 +720,21 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
             return -1;	
     	}
     }
-    else 
+    else
+    if (value == Py_None) {
+    	PythonClientAPI::strsetter ssetter = self->clientAPI->GetStrSetter(name);
+    	if (ssetter) {
+    	    return (self->clientAPI->*ssetter)("");  // Empty string unsets, allows env fallback
+    	}
+    	else {
+    	    ostringstream os;
+    	    os << "No string attribute with name " << name;
+
+    	    PyErr_SetString(PyExc_AttributeError, os.str().c_str());
+            return -1;
+    	}
+    }
+    else
     if (IsString(value)) {
     	PythonClientAPI::strsetter ssetter = self->clientAPI->GetStrSetter(name);
     	if (ssetter) {
@@ -729,9 +743,9 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     	else {
     	    ostringstream os;
     	    os << "No string attribute with name " << name;
-    	    
-    	    PyErr_SetString(PyExc_AttributeError, os.str().c_str()); 
-            return -1;	
+
+    	    PyErr_SetString(PyExc_AttributeError, os.str().c_str());
+            return -1;
     	}
     }
     

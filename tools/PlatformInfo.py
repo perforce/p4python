@@ -40,7 +40,7 @@ class PlatformInfo:
             self.ID_M = self.inStr(release_version.suppdate_month)
             self.ID_D = self.inStr(release_version.suppdate_day)
 
-            self.libraries = ["oldnames", "wsock32", "advapi32", "ws2_32", "User32", "Gdi32", "Ole32", "Shell32", "crypt32", # MSVC libs
+            self.libraries = ["oldnames", "wsock32", "advapi32", "ws2_32", "iphlpapi", "User32", "Gdi32", "Ole32", "Shell32", "crypt32", "bcrypt", # MSVC libs
                               "libclient", "librpc", "libp4script_c", "libp4script", "libp4script_curl", "libp4script_sqlite", "libsupp"] # P4API libs
 
             # with OpenSSL 1.1.0+ windows libraries have changed names to libssl.lib and libcrypto.lib

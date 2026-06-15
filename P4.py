@@ -7,7 +7,7 @@ from __future__ import print_function
     This uses the Python type P4API.P4Adapter, which is a wrapper for the
     Perforce ClientApi object.
     
-    $Id: //depot/main/p4-python/P4.py#115 $
+    $Id: //depot/main/p4-python/P4.py#117 $
     
     #*******************************************************************************
     # Copyright (c) 2007-2010, Perforce Software, Inc.  All rights reserved.
@@ -51,10 +51,43 @@ import uuid, tempfile
 import os, os.path, platform
 import subprocess
 import threading
+from enum import IntEnum
+
+class P4MessageProxy:
+    """Pure-Python stand-in for P4API.P4Message after pickle round-trip."""
+    def __init__(self, severity, generic, msgid, msg_dict, msg_str):
+        self.severity = severity
+        self.generic = generic
+        self.msgid = msgid
+        self.dict = msg_dict
+        self._text = msg_str
+
+    def __str__(self):
+        return self._text
+
+    def __repr__(self):
+        return f"P4MessageProxy(msgid={self.msgid}, severity={self.severity})"
 
 # P4Exception - some sort of error occurred
 class P4Exception(Exception):
     """Exception thrown by P4 in case of Perforce errors or warnings"""
+
+    class Generic(IntEnum):
+        NONE    = 0
+        USAGE   = 1
+        UNKNOWN = 2
+        CONTEXT = 3
+        ILLEGAL = 4
+        NOTYET  = 5
+        PROTECT = 6
+        EMPTY   = 17
+        FAULT   = 33
+        CLIENT  = 34
+        ADMIN   = 35
+        CONFIG  = 36
+        UPGRADE = 37
+        COMM    = 38
+        TOOBIG  = 39
 
     def __init__(self, value):
         super().__init__(value)
@@ -65,9 +98,39 @@ class P4Exception(Exception):
                 self.errors = value[1]
             else:
                 self.errors = [re.sub(r'\[.*?\] ', '', str(self.value).split("\n")[0])]
+            raw_msgs = value[3] if len(value) > 3 else []
+            self.messages = [
+                P4MessageProxy(**m) if isinstance(m, dict) else m
+                for m in raw_msgs
+            ]
+            self._set_shortcut_attrs()
         else:
             self.value = value
             self.errors =self.warnings = None
+            self.messages = []
+            self._set_shortcut_attrs()
+
+    def _set_shortcut_attrs(self):
+        if self.messages:
+            top_msg = max(self.messages, key=lambda m: m.severity)
+            self.severity = top_msg.severity
+            try:
+                self.generic = P4Exception.Generic(top_msg.generic)
+            except ValueError:
+                self.generic = top_msg.generic
+            self.msgid = top_msg.msgid
+            d = top_msg.dict
+            fmt_val = d.get('fmt', '')
+            if isinstance(fmt_val, list):
+                fmt_val = fmt_val[0] if fmt_val else ''
+            self.fmt = fmt_val
+            self.fmt_args = {k: v for k, v in d.items() if k not in ('code', 'fmt')}
+        else:
+            self.severity = 0
+            self.generic = P4Exception.Generic(0)
+            self.msgid = 0
+            self.fmt = ''
+            self.fmt_args = {}
 
     def __str__(self):
         if self.errors:
@@ -93,7 +156,13 @@ class P4Exception(Exception):
 
     def __reduce__(self):
         if hasattr(self, 'errors'):
-            return (self.__class__, ((self.value, self.errors, self.warnings),))
+            msg_dicts = [
+                {'severity': m.severity, 'generic': m.generic, 'msgid': m.msgid,
+                 'msg_dict': m.dict, 'msg_str': str(m)} if not isinstance(m, dict)
+                else m
+                for m in self.messages
+            ]
+            return (self.__class__, ((self.value, self.errors, self.warnings, msg_dicts),))
         return (self.__class__, (self.value,))
 
 
@@ -580,6 +649,10 @@ class P4(P4API.P4Adapter):
             specs = self.run(cmd, *args, **kargs)
             spec = self.specfields[cmd][0]
             field = self.specfields[cmd][1]
+
+            # post process groups rows so iterate_groups yields one spec per group
+            if cmd == 'groups':
+                specs = list({d[field]: d for d in specs}.values())
             
             # Return a generators (Python iterator object)
             # On iteration, this will retrieve one spec at a time
