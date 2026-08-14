@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/PythonClientAPI.h#45 $
+ * $Id: //depot/main/p4-python/PythonClientAPI.h#46 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -224,6 +224,9 @@ public:
     // Protocol
     PyObject * SetProtocol( const char * var, const char *val );
     PyObject * GetProtocol( const char * var );
+
+    // Per-command server variables
+    PyObject * SetVar( const char *var, const char *val );
 
     // Exception levels:
     //

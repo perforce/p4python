@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Description	: C++ Subclass for ClientProgress used by Python ClientProgress.
  * 		  Allows Perforce API to indicate progress of calls to P4Python
  *
- * 		  $Id: //depot/main/p4-python/PythonClientProgress.cpp#5 $
+ * 		  $Id: //depot/main/p4-python/PythonClientProgress.cpp#6 $
  *
  ******************************************************************************/
 
@@ -60,8 +60,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
-PythonClientProgress::PythonClientProgress(PyObject * prog, int type)
-    :	progress(prog)
+PythonClientProgress::PythonClientProgress(PythonClientUser *clientUser, PyObject * prog, int type)
+    :	ui(clientUser), progress(prog)
 {
     EnsurePythonLock guard;
 
@@ -70,13 +70,15 @@ PythonClientProgress::PythonClientProgress(PyObject * prog, int type)
 	Py_DECREF( res );
     }
     else {
-	cout << "Exception thrown in init" << endl;
-	PyErr_PrintEx(0);
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	ui->SetPendingException(excType, excValue, excTb);
     }
 }
 
 PythonClientProgress::~PythonClientProgress()
 {
+    this->ui = NULL;
     this->progress = NULL;
 }
 
@@ -89,7 +91,9 @@ void PythonClientProgress::Description( const StrPtr *desc, int units )
 	Py_DECREF( res );
     }
     else {
-	cout << "Exception thrown in setDescription" << endl;
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	ui->SetPendingException(excType, excValue, excTb);
     }
 }
 
@@ -102,7 +106,9 @@ void PythonClientProgress::Total( long total )
 	Py_DECREF( res );
     }
     else {
-	cout << "Exception thrown in setTotal" << endl;
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	ui->SetPendingException(excType, excValue, excTb);
     }
 
 }
@@ -113,8 +119,10 @@ int PythonClientProgress::Update( long pos )
 
     PyObject * result = PyObject_CallMethod( this->progress , (char*) "update", (char*)"l", pos );
     if( result == NULL ) { // exception thrown
-	cout << "Exception thrown in update" << endl;
-	return 1; // TODO: Is this the correct value to return in case of an error?
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	ui->SetPendingException(excType, excValue, excTb);
+	return 1;
     }
     else {
 	Py_DECREF( result );
@@ -132,7 +140,9 @@ void PythonClientProgress::Done( int fail )
 	Py_DECREF( res );
     }
     else {
-	    cout << "Exception thrown in Done" << endl;
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	ui->SetPendingException(excType, excValue, excTb);
     }
 }
 

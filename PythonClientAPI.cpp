@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientAPI.cpp#82 $
+$Id: //depot/main/p4-python/PythonClientAPI.cpp#85 $
 *******************************************************************************/
  
 #include <Python.h>
@@ -825,6 +825,13 @@ PyObject * PythonClientAPI::Run( const char *cmd, int argc, char * const *argv )
 	    return NULL;
     }
 
+    // Check for pending exception from callbacks
+    PyObject *excType, *excValue, *excTb;
+    if( ui.GetPendingException(&excType, &excValue, &excTb) ) {
+	PyErr_Restore(excType, excValue, excTb);
+	return NULL;
+    }
+
     p4py::P4Result &results = ui.GetResults();
 
     if ( results.ErrorCount() && exceptionLevel ) {
@@ -1071,6 +1078,17 @@ PyObject * PythonClientAPI::SpecFields( const char * type )
 PyObject * PythonClientAPI::SetProtocol( const char * var, const char * val )
 {
     client.SetProtocol( var, val );
+
+    Py_RETURN_NONE;
+}
+
+//
+// Sets a per-command server variable (e.g. limitMap). The P4 C++ API clears
+// these after each Run(), so they do not leak into subsequent commands.
+//
+PyObject * PythonClientAPI::SetVar( const char * var, const char * val )
+{
+    client.SetVar( var, val );
 
     Py_RETURN_NONE;
 }

@@ -328,6 +328,25 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+New functionalities in 2026.1 Patch 1 (2026.1/3027817) (2026/07/30)
+
+    #3021335 (Job #136469)
+        Added a new set_var method to set arbitrary per-command server
+        variables, enabling features driven by those variables such as
+        limitMap, which restricts command output (sync/files/fstat) to a
+        set of paths.
+
+Bugs fixed in 2026.1 Patch 1 (2026.1/3027817) (2026/07/30)
+
+    #2984898 (Job #110288)
+        P4Python now correctly propagates exceptions raised in user-defined
+        Python callbacks (P4.OutputHandler, P4.Progress, and P4.Resolver)
+        instead of swallowing or mishandling them in the C extension. In
+        particular, an exception raised in a Resolver's resolve() method on
+        Linux no longer causes a segfault.
+
+--------------------------------------------------------------------------
+
 New functionalities in 2026.1 (2026.1/2974490) (2026/06/11)
 
     #2948815 (Job #133655) * ** ***

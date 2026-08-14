@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import glob, sys, time, stat, platform, os
+import contextlib, io
 pattern = 'build/lib*'
 architecture = platform.architecture()
 if 'Windows' in architecture[1]:
@@ -680,6 +681,56 @@ class TestP4(TestP4Python):
             self.assertTrue( 'submittedChange' in result[-1], msg)
         except P4.P4Exception as inst:
             self.fail("submit failed with exception ")
+
+    def test_set_var_limitmap(self):
+        """set_var forwards a per-command server variable to ClientApi::SetVar.
+
+        limitMap entries (limitMap0, limitMap1, ...) restrict sync/files/fstat
+        output server-side to the mapped paths.  We submit files under three
+        distinct //depot directories, limit a 'files' command to two of them
+        via limitMap0/limitMap1, and confirm only those directories' files come
+        back.  A subsequent command on the SAME connection must be unfiltered,
+        proving the vars did not leak across Runs (the P4 C++ API clears set
+        vars after each Run).
+        """
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+        self._setClient()
+
+        # Submit one file under each of //depot/dir1, //depot/dir2, //depot/dir3.
+        submitted = []
+        for subdir in ("dir1", "dir2", "dir3"):
+            absDir = os.path.join(self.client_root, subdir)
+            os.mkdir(absDir)
+            fname = os.path.join(absDir, "file.txt")
+            with open(fname, "w") as f:
+                f.write("content in %s\n" % subdir)
+            self.p4.run_add(subdir + "/file.txt")
+            submitted.append("//depot/%s/file.txt" % subdir)
+        self.p4.run_submit("-d", "set_var limitMap test")
+
+        # Sanity check: without any limit, all files are visible.
+        allFiles = self.p4.run_files("//depot/...")
+        allPaths = sorted(f["depotFile"] for f in allFiles)
+        self.assertEqual(allPaths, sorted(submitted),
+                         "expected all files before applying limitMap")
+
+        # Restrict the very next command to //depot/dir1 and //depot/dir2 via
+        # two limitMap entries (limitMap0 and limitMap1).
+        self.p4.set_var("limitMap0", "//depot/dir1/...")
+        self.p4.set_var("limitMap1", "//depot/dir2/...")
+        limited = self.p4.run_files("//depot/...")
+        limitedPaths = sorted(f["depotFile"] for f in limited)
+        self.assertEqual(limitedPaths,
+                         ["//depot/dir1/file.txt", "//depot/dir2/file.txt"],
+                         "limitMap0/limitMap1 should restrict output to dir1 and dir2")
+
+        # The var must not leak: the next command on the same connection is
+        # unfiltered again.
+        after = self.p4.run_files("//depot/...")
+        afterPaths = sorted(f["depotFile"] for f in after)
+        self.assertEqual(afterPaths, sorted(submitted),
+                         "set_var must not leak into the following command")
 
     def testResolve(self):
         testDir = 'test_resolve'
@@ -1968,6 +2019,858 @@ class TestP4(TestP4Python):
         # Clean up
         if os.path.exists(failing_merge_script):
             os.unlink(failing_merge_script)
+
+    def testProperty(self):
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+
+        # AC-1: Set a property and verify the confirmation message
+        result = self.p4.run('property', '-a', '-n', 'TestProp', '-v', 'TestValue')
+        self.assertTrue(len(self.p4.messages) > 0, "Expected confirmation message after setting property")
+        found_set_message = False
+        for msg in self.p4.messages:
+            if 'TestProp' in str(msg):
+                found_set_message = True
+                break
+        self.assertTrue(found_set_message, "Expected message confirming property was set")
+
+        # AC-2: List the property and verify the returned dict structure
+        result = self.p4.run('property', '-l', '-n', 'TestProp')
+        self.assertTrue(isinstance(result, list), "property -l should return a list")
+        self.assertTrue(len(result) > 0, "property -l should return at least one dict")
+        prop_dict = None
+        for item in result:
+            if isinstance(item, dict) and item.get('name') == 'TestProp':
+                prop_dict = item
+                break
+        self.assertIsNotNone(prop_dict, "Expected to find property dict with name 'TestProp'")
+        self.assertEqual(prop_dict['name'], 'TestProp', "Property name should be 'TestProp'")
+        self.assertEqual(prop_dict['value'], 'TestValue', "Property value should be 'TestValue'")
+
+        # AC-3: Delete the property and verify it no longer appears in the listing
+        self.p4.run('property', '-d', '-n', 'TestProp')
+        result = self.p4.run('property', '-l', '-n', 'TestProp')
+        found_deleted = False
+        for item in result:
+            if isinstance(item, dict) and item.get('name') == 'TestProp':
+                found_deleted = True
+                break
+        self.assertFalse(found_deleted, "Property should no longer appear after deletion")
+
+        # AC-4: Verify exception is raised when -v is missing
+        original_level = self.p4.exception_level
+        self.p4.exception_level = P4.P4.RAISE_ERRORS
+        with self.assertRaises(P4.P4Exception):
+            self.p4.run('property', '-a', '-n', 'TestProp')
+        self.p4.exception_level = original_level
+
+        self.p4.disconnect()
+
+    def testCallbackExceptions(self):
+        """
+        Test exception propagation from Python callbacks (P4PYTHON-373).
+        Verifies that exceptions raised in OutputHandler, Resolver, and Progress
+        callbacks propagate to the caller instead of being swallowed or causing segfaults.
+        """
+        self.p4.connect()
+        self.assertTrue(self.p4.connected(), "Not connected")
+
+        # Set up client for file operations
+        client_spec = self.p4.fetch_client()
+        client_spec['Root'] = self.client_root
+        self.p4.save_client(client_spec)
+        self.p4.client = client_spec['Client']
+
+        # AC-1 & AC-2: OutputHandler callbacks (outputStat, outputText) raising
+        # should propagate the original exception type (not SystemError)
+        class ThrowingOutputHandler(P4.OutputHandler):
+            def outputStat(self, stat):
+                raise RuntimeError('boom from outputStat')
+
+        handler = ThrowingOutputHandler()
+        self.p4.handler = handler
+        with self.assertRaises(RuntimeError) as cm:
+            self.p4.run('info')
+        self.assertEqual(str(cm.exception), 'boom from outputStat')
+        self.p4.handler = None
+
+        # Verify connection is still usable
+        result = self.p4.run('info')
+        self.assertTrue(len(result) > 0, "Connection should remain usable after callback exception")
+
+        # OutputHandler.outputText raising should propagate the exception
+        test_file = os.path.join(self.client_root, 'callback_test.txt')
+        with open(test_file, 'w') as f:
+            f.write('test content\n')
+
+        self.p4.run('add', test_file)
+        self.p4.run('submit', '-d', 'initial')
+
+        class ThrowingTextHandler(P4.OutputHandler):
+            def outputText(self, text):
+                raise ValueError('boom from outputText')
+
+        handler = ThrowingTextHandler()
+        self.p4.handler = handler
+        with self.assertRaises(ValueError) as cm:
+            self.p4.run('print', test_file)
+        self.assertEqual(str(cm.exception), 'boom from outputText')
+        self.p4.handler = None
+
+        # Verify connection is still usable
+        result = self.p4.run('info')
+        self.assertTrue(len(result) > 0, "Connection should remain usable after callback exception")
+
+        # AC-1: Resolver.resolve raising should propagate (no segfault on Linux)
+        class ThrowingResolver(P4.Resolver):
+            def resolve(self, mergeData):
+                raise OSError('boom from resolve')
+
+        # Create two versions of a file to integrate
+        test_file2 = os.path.join(self.client_root, 'resolve_test.txt')
+        with open(test_file2, 'w') as f:
+            f.write('line1\n')
+        self.p4.run('add', test_file2)
+        self.p4.run('submit', '-d', 'add resolve test')
+
+        # Edit it
+        self.p4.run('edit', test_file2)
+        with open(test_file2, 'w') as f:
+            f.write('line1\nline2\n')
+        self.p4.run('submit', '-d', 'edit resolve test')
+
+        # Copy it with a different name
+        test_file3 = os.path.join(self.client_root, 'resolve_target.txt')
+        with open(test_file3, 'w') as f:
+            f.write('line1\n')
+        self.p4.run('add', test_file3)
+        self.p4.run('submit', '-d', 'add target')
+
+        # Integrate latest version to the target
+        self.p4.run('integ', '//depot/resolve_test.txt#2', '//depot/resolve_target.txt')
+
+        resolver = ThrowingResolver()
+        self.p4.resolver = resolver
+        with self.assertRaises(OSError) as cm:
+            self.p4.run('resolve')
+        self.assertEqual(str(cm.exception), 'boom from resolve')
+        self.p4.resolver = None
+
+        # Clean up
+        self.p4.run('revert', '//...')
+
+        # AC-4: Verify connection remains usable after callback exception
+        result = self.p4.run('info')
+        self.assertTrue(len(result) > 0, "Connection should remain usable after callback exception")
+
+        # Note: Progress callback exception handling is implemented in PythonClientProgress.cpp
+        # (init, setDescription, setTotal, update, done all capture exceptions via PyErr_Fetch
+        # and SetPendingException). Testing Progress callbacks requires operations that invoke
+        # progress reporting, which may not be reliably triggered in all test environments.
+        # The C++ implementation follows the same pattern as OutputHandler and Resolver.
+
+        self.p4.disconnect()
+
+    # ------------------------------------------------------------------
+    # P4PYTHON-617: coverage-raising tests for the pure-Python P4.py layer.
+    #
+    # Group A - standalone unit tests (no server required).
+    # ------------------------------------------------------------------
+
+    def testExceptionStringFormats(self):
+        """Drive every branch of P4Exception.__str__/__repr__ and
+        P4MessageProxy.__str__/__repr__ by constructing the objects directly.
+
+        Scope: this test validates the pure-Python *unpacking* logic only, by
+        hand-constructing the value tuple. The C-layer contract (that the
+        extension actually raises P4Exception with this same tuple structure,
+        and that e.severity / e.generic / e.fmt come out correct from a live
+        server error) is covered separately by testExceptionMessages, which
+        triggers a real server warning and asserts those same attributes."""
+
+        # 4-element form with a real error list, fmt supplied as a list.
+        # Only this branch (one carrying messages) populates fmt / fmt_args.
+        e_err = P4.P4Exception(("top error", ["error one"], [],
+                               [{"severity": 3, "generic": 4, "msgid": 17,
+                                 "msg_dict": {"fmt": ["error one fmt"],
+                                              "code": "123", "extra": "y"},
+                                 "msg_str": "error one"}]))
+        self.assertEqual(str(e_err), "error one", "errors-list branch of __str__")
+        self.assertEqual(e_err.severity, 3, "top severity not picked up")
+        self.assertEqual(e_err.generic, P4.P4Exception.Generic.ILLEGAL,
+                         "generic not mapped to enum")
+        self.assertEqual(e_err.msgid, 17, "msgid not picked up")
+        self.assertEqual(e_err.fmt, "error one fmt", "fmt list not unpacked to first element")
+        self.assertEqual(e_err.fmt_args, {"extra": "y"},
+                         "fmt_args must exclude 'code' and 'fmt'")
+        self.assertIn("P4Exception", repr(e_err), "class name missing from repr")
+        self.assertIn("error one", repr(e_err), "message missing from repr")
+
+        # warnings-only branch (errors come back empty, warnings populated).
+        # With no messages, _set_shortcut_attrs leaves fmt/fmt_args empty.
+        e_warn = P4.P4Exception(("top warn", [], ["warn one"], []))
+        self.assertEqual(str(e_warn), "warn one", "warnings-list branch of __str__")
+        self.assertEqual(e_warn.fmt, "", "no-message branch must leave fmt empty")
+        self.assertEqual(e_warn.fmt_args, {}, "no-message branch must leave fmt_args empty")
+
+        # plain (non list/tuple) value -> errors and warnings are None, and the
+        # no-message branch again leaves fmt/fmt_args empty.
+        e_plain = P4.P4Exception("plain error")
+        self.assertIsNone(e_plain.errors, "plain value must leave errors None")
+        self.assertIsNone(e_plain.warnings, "plain value must leave warnings None")
+        self.assertEqual(str(e_plain), "plain error", "value branch of __str__")
+        self.assertEqual(e_plain.fmt, "", "plain value must leave fmt empty")
+        self.assertEqual(e_plain.fmt_args, {}, "plain value must leave fmt_args empty")
+
+        # errors set to a bare (non-list) string
+        e_str_err = P4.P4Exception("x")
+        e_str_err.errors = "single error"
+        e_str_err.warnings = None
+        self.assertEqual(str(e_str_err), "single error", "non-list errors branch")
+
+        # warnings set to a bare (non-list) string
+        e_str_warn = P4.P4Exception("x")
+        e_str_warn.errors = None
+        e_str_warn.warnings = "single warning"
+        self.assertEqual(str(e_str_warn), "single warning", "non-list warnings branch")
+
+        # final fall-through: empty (but not None) errors/warnings, list value
+        e_fall = P4.P4Exception("x")
+        e_fall.errors = []
+        e_fall.warnings = []
+        e_fall.value = ["[tag123] hello world"]
+        self.assertIn("hello world", str(e_fall), "tagged message text must survive")
+        self.assertNotIn("tag123", str(e_fall), "bracketed tag prefix must be stripped")
+
+        # scalar value fall-through: empty (non-None) errors/warnings, plain value
+        e_scalar = P4.P4Exception("x")
+        e_scalar.errors = []
+        e_scalar.warnings = []
+        e_scalar.value = "plain scalar value"
+        self.assertEqual(str(e_scalar), "plain scalar value",
+                         "scalar value fall-through branch of __str__")
+
+        # P4MessageProxy direct
+        proxy = P4.P4MessageProxy(severity=2, generic=17, msgid=123,
+                                  msg_dict={}, msg_str="a message")
+        self.assertEqual(str(proxy), "a message", "proxy __str__ must return the message")
+        self.assertEqual(proxy.dict, {}, "proxy dict not stored")
+        proxy_repr = repr(proxy)
+        self.assertIn("msgid=123", proxy_repr, "proxy repr missing msgid")
+        self.assertIn("severity=2", proxy_repr, "proxy repr missing severity")
+
+    def testMapStringAndReverse(self):
+        """Exercise P4.Map.__str__, is_empty, reverse and the insert overloads."""
+        m = P4.Map()
+        self.assertTrue(m.is_empty(), "Fresh map must be empty")
+
+        m.insert("//depot/main/... //ws/...")
+        self.assertFalse(m.is_empty(), "Map must not be empty after insert")
+        self.assertTrue(m.includes("//depot/main/foo"), "Map should include lhs path")
+
+        s = str(m)
+        self.assertIn("//depot/main/... //ws/...", s, "__str__ missing mapping line")
+        self.assertTrue(s.endswith("\n"), "__str__ must terminate each line with newline")
+
+        r = m.reverse()
+        self.assertIsInstance(r, P4.Map, "reverse() must return a P4.Map")
+        self.assertEqual(r.as_array(), ["//ws/... //depot/main/..."],
+                         "reverse() did not swap lhs/rhs")
+
+        # two-string (pair) insert form
+        pair = P4.Map()
+        pair.insert("//a/...", "//b/...")
+        self.assertEqual(pair.count(), 1, "Pair insert did not add an entry")
+        self.assertTrue(pair.includes("//a/foo"), "Pair insert mapping incorrect")
+
+        # list insert form
+        lst = P4.Map()
+        lst.insert(["//x/... //y/...", "//p/... //q/..."])
+        self.assertEqual(lst.count(), 2, "List insert did not add two entries")
+
+    def testKeepAlive(self):
+        """Exercise PyKeepAlive.isAlive, __call__ and the polling-thread path."""
+        ka = P4.PyKeepAlive()
+        self.assertEqual(ka.isAlive(), 1, "Fresh keep-alive must report alive")
+
+        # First call creates and starts the daemon polling thread
+        self.assertEqual(ka(), 1, "__call__ must return the alive flag")
+        # Second call hits the 'thread already running' branch
+        self.assertEqual(ka(), 1, "__call__ must stay alive while polling thread runs")
+        self.assertEqual(ka.isAlive(), 1, "Keep-alive should still be alive")
+
+    def testOutputHandlerClasses(self):
+        """Verify OutputHandler constants and default REPORT return values."""
+        self.assertEqual(P4.OutputHandler.REPORT, 0, "REPORT constant changed")
+        self.assertEqual(P4.OutputHandler.HANDLED, 1, "HANDLED constant changed")
+        self.assertEqual(P4.OutputHandler.CANCEL, 2, "CANCEL constant changed")
+
+        h = P4.OutputHandler()
+        self.assertEqual(h.outputText("t"), P4.OutputHandler.REPORT, "outputText default")
+        self.assertEqual(h.outputBinary(b"b"), P4.OutputHandler.REPORT, "outputBinary default")
+        self.assertEqual(h.outputStat({}), P4.OutputHandler.REPORT, "outputStat default")
+        self.assertEqual(h.outputInfo({}), P4.OutputHandler.REPORT, "outputInfo default")
+        self.assertEqual(h.outputMessage("m"), P4.OutputHandler.REPORT, "outputMessage default")
+
+        f = P4.FilelogOutputHandler()
+        self.assertEqual(f.outputFilelog(None), P4.OutputHandler.REPORT,
+                         "FilelogOutputHandler.outputFilelog default")
+
+        # ReportHandler is the printing OutputHandler subclass; every method
+        # reports HANDLED. Its methods print() to stdout by design (it's a
+        # console-report handler) -- redirect that output so it doesn't leak
+        # into the test runner's console, where CI log scanners can mistake
+        # the hardcoded "error:"/"stat:" print labels for real failures.
+        rh = P4.ReportHandler()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rh.outputText("t"), P4.OutputHandler.HANDLED, "ReportHandler.outputText")
+            self.assertEqual(rh.outputBinary(b"b"), P4.OutputHandler.HANDLED, "ReportHandler.outputBinary")
+            self.assertEqual(rh.outputStat({}), P4.OutputHandler.HANDLED, "ReportHandler.outputStat")
+            self.assertEqual(rh.outputInfo({}), P4.OutputHandler.HANDLED, "ReportHandler.outputInfo")
+            self.assertEqual(rh.outputMessage("m"), P4.OutputHandler.HANDLED, "ReportHandler.outputMessage")
+
+    def testProgressClasses(self):
+        """Verify Progress TYPE_*/UNIT_* constants and base method state-keeping."""
+        self.assertEqual(P4.Progress.TYPE_SENDFILE, 1, "TYPE_SENDFILE changed")
+        self.assertEqual(P4.Progress.TYPE_RECEIVEFILE, 2, "TYPE_RECEIVEFILE changed")
+        self.assertEqual(P4.Progress.TYPE_TRANSFER, 3, "TYPE_TRANSFER changed")
+        self.assertEqual(P4.Progress.TYPE_COMPUTATION, 4, "TYPE_COMPUTATION changed")
+        self.assertEqual(P4.Progress.UNIT_PERCENT, 1, "UNIT_PERCENT changed")
+        self.assertEqual(P4.Progress.UNIT_FILES, 2, "UNIT_FILES changed")
+        self.assertEqual(P4.Progress.UNIT_KBYTES, 3, "UNIT_KBYTES changed")
+        self.assertEqual(P4.Progress.UNIT_MBYTES, 4, "UNIT_MBYTES changed")
+
+        p = P4.Progress()
+        p.init(P4.Progress.TYPE_SENDFILE)
+        self.assertEqual(p.type, P4.Progress.TYPE_SENDFILE, "init did not store type")
+        p.setDescription("uploading", P4.Progress.UNIT_FILES)
+        self.assertEqual(p.description, "uploading", "setDescription did not store description")
+        self.assertEqual(p.units, P4.Progress.UNIT_FILES, "setDescription did not store units")
+        p.setTotal(100)
+        self.assertEqual(p.total, 100, "setTotal did not store total")
+        p.update(42)
+        self.assertEqual(p.position, 42, "update did not store position")
+        self.assertIsNone(p.done(0), "done() base implementation should return None")
+
+        # TextProgress is the printing Progress subclass; verify it still
+        # records the same state via the base class. Its methods print() to
+        # stdout by design -- redirect that output for the same reason as
+        # ReportHandler above.
+        tp = P4.TextProgress()
+        with contextlib.redirect_stdout(io.StringIO()):
+            tp.init(P4.Progress.TYPE_RECEIVEFILE)
+            self.assertEqual(tp.type, P4.Progress.TYPE_RECEIVEFILE, "TextProgress.init")
+            tp.setDescription("syncing", P4.Progress.UNIT_FILES)
+            self.assertEqual(tp.description, "syncing", "TextProgress.setDescription description")
+            self.assertEqual(tp.units, P4.Progress.UNIT_FILES, "TextProgress.setDescription units")
+            tp.setTotal(10)
+            self.assertEqual(tp.total, 10, "TextProgress.setTotal")
+            tp.update(5)
+            self.assertEqual(tp.position, 5, "TextProgress.update")
+            self.assertIsNone(tp.done(0), "TextProgress.done")
+
+    def testResolverDefault(self):
+        """Exercise the default Resolver.resolve / actionResolve decision logic.
+
+        Scope: this is a pure-Python unit test of the decision logic in
+        isolation (using a FakeMerge stub). The C-layer contract -- that
+        run_resolve() actually instantiates and invokes the default Resolver --
+        is covered by the pre-existing integration tests testResolve,
+        testMergeToolReturnCode and testCallbackExceptions, which drive
+        run_resolve() against a live server."""
+        class FakeMerge:
+            def __init__(self, hint):
+                self.merge_hint = hint
+
+        r = P4.Resolver()
+        # 'e' (conflict) is special-cased to skip the resolve; this branch
+        # prints to stdout by design, so redirect it for the same reason as
+        # ReportHandler/TextProgress above.
+        with contextlib.redirect_stdout(io.StringIO()):
+            conflict_result = r.resolve(FakeMerge("e"))
+        self.assertEqual(conflict_result, "s",
+                         "Default resolver must skip on merge conflict")
+        # any other hint is passed straight through
+        self.assertEqual(r.resolve(FakeMerge("at")), "at",
+                         "Default resolver must pass the hint through")
+        self.assertEqual(r.actionResolve(FakeMerge("am")), "am",
+                         "Default actionResolve must return the hint")
+
+    def testIdentifyAndRepr(self):
+        """Cover P4.identify() and both branches of P4.__repr__."""
+        ident = P4.P4.identify()
+        self.assertIsInstance(ident, str, "identify() must return a string")
+        self.assertTrue(any(ch.isdigit() for ch in ident),
+                        "identify() string should contain a version number")
+
+        # disconnected repr
+        p4 = P4.P4()
+        p4.user = "bob"
+        p4.client = "ws"
+        p4.port = "myport:1666"
+        rep = repr(p4)
+        self.assertTrue(rep.rstrip().endswith("disconnected"),
+                        "Disconnected repr must end with 'disconnected': %s" % rep)
+        self.assertIn("bob", rep, "repr missing user")
+        self.assertIn("ws", rep, "repr missing client")
+        self.assertIn("myport:1666", rep, "repr missing port")
+
+        # connected repr
+        self.p4.connect()
+        rep_c = repr(self.p4).rstrip()
+        self.assertTrue(rep_c.endswith("connected"), "Connected repr must end with 'connected'")
+        self.assertFalse(rep_c.endswith("disconnected"),
+                         "Connected repr must not report disconnected")
+        self.p4.disconnect()
+
+    # ------------------------------------------------------------------
+    # Group B - integration tests (require the RSH p4d harness).
+    # ------------------------------------------------------------------
+
+    def testDepotFileFormatting(self):
+        """Cover DepotFile/Revision/Integration __str__/__repr__ and the
+        each_* iterators via run_filelog output."""
+        self.p4.connect()
+        self._setClient()
+
+        testDir = 'test_depotfmt'
+        files = self.createFiles(testDir)
+
+        change = self.p4.fetch_change()
+        change._description = "Depot formatting add"
+        self._doSubmit("Failed to submit the add", change)
+
+        # produce an integration record so str_integration is exercised
+        self.p4.run_integ(testDir + '/...', 'branch_depotfmt/...')
+        change = self.p4.fetch_change()
+        change._description = "Depot formatting branch"
+        self._doSubmit("Failed to submit branch", change)
+
+        filelogs = self.p4.run_filelog(testDir + '/...')
+        self.assertEqual(len(filelogs), len(files), "Unexpected number of filelog entries")
+
+        df = filelogs[0]
+        self.assertIsInstance(df, P4.DepotFile, "run_filelog must yield DepotFile objects")
+
+        text = str(df)
+        self.assertIn(df.depotFile, text, "DepotFile.__str__ missing depot path")
+        self.assertIn("change", text, "DepotFile.__str__ missing revision detail")
+
+        self.assertIn("DepotFile", repr(df), "DepotFile.__repr__ missing class name")
+
+        revs = list(df.each_revision())
+        self.assertEqual(len(revs), len(df.revisions), "each_revision yielded wrong count")
+
+        rev = df.revisions[0]
+        self.assertIn("Revision", repr(rev), "Revision.__repr__ missing class name")
+        self.assertGreater(len(rev.integrations), 0, "Expected at least one integration")
+
+        integ = rev.integrations[0]
+        self.assertIn("Integration", repr(integ), "Integration.__repr__ missing class name")
+        integs = list(rev.each_integration())
+        self.assertEqual(len(integs), len(rev.integrations),
+                         "each_integration yielded wrong count")
+        self.assertIn(integ.how, text, "str_integration line missing from DepotFile.__str__")
+
+        # run_filelog with an explicit logger exercises its dedicated debug path
+        import logging
+        try:
+            from StringIO import StringIO
+        except ImportError:
+            from io import StringIO
+        stream = StringIO()
+        lg = logging.getLogger('TestDepotFmtFilelog')
+        lg.handlers = []
+        lg.addHandler(logging.StreamHandler(stream))
+        lg.setLevel(logging.DEBUG)
+        self.p4.run_filelog(testDir + '/...', logger=lg)
+        self.assertIn("//depot/test_depotfmt", stream.getvalue(),
+                      "run_filelog did not emit its formatted result to the logger")
+
+    def testPrintContent(self):
+        """Cover run_print() assembly of a text file's contents."""
+        self.p4.connect()
+        self._setClient()
+
+        testDir = 'test_print'
+        testAbsoluteDir = os.path.join(self.client_root, testDir)
+        os.mkdir(testAbsoluteDir)
+
+        content = "Hello\nWorld\n"
+        fname = os.path.join(testAbsoluteDir, "text.txt")
+        with open(fname, "w") as f:
+            f.write(content)
+        self.p4.run_add(testDir + "/text.txt")
+        self.p4.run_submit('-d', 'print content test')
+
+        result = self.p4.run_print('//depot/test_print/text.txt')
+        self.assertIsInstance(result[0], dict, "First print element must be the stat dict")
+        self.assertEqual(result[1], content,
+                         "run_print did not reassemble the file content exactly")
+
+        # run_print with an explicit logger exercises its dedicated debug path
+        import logging
+        try:
+            from StringIO import StringIO
+        except ImportError:
+            from io import StringIO
+        stream = StringIO()
+        lg = logging.getLogger('TestPrintLogger')
+        lg.handlers = []
+        lg.addHandler(logging.StreamHandler(stream))
+        lg.setLevel(logging.DEBUG)
+        logged = self.p4.run_print('//depot/test_print/text.txt', logger=lg)
+        self.assertEqual(logged[1], content, "run_print with logger lost the content")
+        self.assertIn("//depot/test_print/text.txt", stream.getvalue(),
+                      "run_print logger output did not reference the printed depot path")
+
+    def testRunPrintBinaryAndEmpty(self):
+        """Cover run_print() empty-file ('') and binary (b''.join) branches."""
+        self.p4.connect()
+        self._setClient()
+
+        testDir = 'test_print_be'
+        testAbsoluteDir = os.path.join(self.client_root, testDir)
+        os.mkdir(testAbsoluteDir)
+
+        # empty text file
+        empty_name = os.path.join(testAbsoluteDir, "empty.txt")
+        with open(empty_name, "w") as f:
+            pass
+        self.p4.run_add(testDir + "/empty.txt")
+
+        # binary file
+        binary_content = bytes(range(8))
+        bin_name = os.path.join(testAbsoluteDir, "data.bin")
+        with open(bin_name, "wb") as f:
+            f.write(binary_content)
+        self.p4.run_add('-t', 'binary', testDir + "/data.bin")
+
+        self.p4.run_submit('-d', 'print binary and empty test')
+
+        empty_result = self.p4.run_print('//depot/test_print_be/empty.txt')
+        self.assertIsInstance(empty_result[0], dict, "Empty print missing stat dict")
+        self.assertEqual(empty_result[1], "",
+                         "run_print on an empty file must yield an empty string")
+
+        bin_result = self.p4.run_print('//depot/test_print_be/data.bin')
+        self.assertIsInstance(bin_result[0], dict, "Binary print missing stat dict")
+        self.assertIsInstance(bin_result[1], bytes, "Binary content must be bytes")
+        self.assertEqual(bin_result[1], binary_content,
+                         "run_print did not reassemble binary content with b''.join")
+
+    def testFilelogOutputHandler(self):
+        """Cover FilelogOutputHandler.outputStat -> processFilelog -> outputFilelog."""
+        self.p4.connect()
+        self._setClient()
+
+        testDir = 'test_filelog_handler'
+        files = self.createFiles(testDir)
+
+        change = self.p4.fetch_change()
+        change._description = "Filelog handler test"
+        self._doSubmit("Failed to submit the add", change)
+
+        class CapturingFilelogHandler(P4.FilelogOutputHandler):
+            def __init__(self):
+                P4.FilelogOutputHandler.__init__(self)
+                self.depotFiles = []
+
+            def outputFilelog(self, df):
+                self.depotFiles.append(df)
+                return P4.OutputHandler.HANDLED
+
+        handler = CapturingFilelogHandler()
+        self.p4.run_filelog(testDir + '/...', handler=handler)
+
+        self.assertEqual(len(handler.depotFiles), len(files),
+                         "Handler did not receive one DepotFile per file")
+        self.assertTrue(all(isinstance(df, P4.DepotFile) for df in handler.depotFiles),
+                        "outputFilelog must receive DepotFile objects")
+
+    def testRunShelveWithSpecAndDelete(self):
+        """Cover run_shelve() dict branch and delete_shelve() -c/-d handling."""
+        self.p4.connect()
+        self._setClient()
+        self.assertEqual(len(self.p4.run_opened()), 0, "Shouldn't have open files")
+
+        if self.p4.server_level >= 28:
+            testDir = 'test_shelve_spec'
+            files = self.createFiles(testDir)
+
+            change = self.p4.fetch_change()
+            change._description = "Shelve spec test"
+
+            # passing the change spec (a dict subclass) exercises the -i branch
+            shelved = self.p4.run_shelve(change)
+            c = None
+            for r in shelved:
+                if isinstance(r, dict) and 'change' in r:
+                    c = r['change']
+                    break
+            self.assertIsNotNone(c, "run_shelve(spec) did not report a change number")
+
+            self.p4.run_revert('...')
+            self.assertEqual(len(self.p4.run_opened()), 0, "Files still open after revert")
+
+            # delete_shelve must prepend -c and -d
+            self.p4.delete_shelve(c)
+            shelved_changes = self.p4.run('changes', '-s', 'shelved')
+            self.assertFalse(any(sc.get('change') == c for sc in shelved_changes),
+                             "Shelve was not deleted")
+        else:
+            print("Need Perforce Server 2009.2 or greater to test shelving")
+
+    def testSpecShortcutsAndErrors(self):
+        """Cover the dynamic fetch_/save_/delete_/parse_/format_ shortcuts plus
+        the iterate_ unknown-spec error and __getattr__ AttributeError path."""
+        self.p4.connect()
+
+        # fetch_ (-o) and save_ (-i)
+        client = self.p4.fetch_client()
+        self.assertIsInstance(client, P4.Spec, "fetch_client must return a Spec")
+        client._root = self.client_root
+        client._description = "Shortcut test\n"
+        self.p4.save_client(client)
+
+        # format_ then parse_ round-trip
+        form = self.p4.format_client(client)
+        self.assertIsInstance(form, str, "format_client must return a string")
+        reparsed = self.p4.parse_client(form)
+        self.assertIsInstance(reparsed, P4.Spec, "parse_client must return a Spec")
+        self.assertEqual(reparsed._root, client._root,
+                         "Round-tripped spec lost the Root field")
+
+        # the reparsed spec carries a comment block, so re-formatting it
+        # exercises the comment-prepending branch of format_*
+        self.assertIn('comment', reparsed.__dict__, "parse_ did not attach a comment block")
+        form2 = self.p4.format_client(reparsed)
+        self.assertIsInstance(form2, str, "format_client must return a string")
+        self.assertIn("Root:", form2, "Re-formatted spec lost its fields")
+
+        # run_init / run_clone are deliberately disabled in favour of P4.init/clone
+        self.assertRaises(Exception, self.p4.run_init)
+        self.assertRaises(Exception, self.p4.run_clone)
+
+        # delete_ shortcut on a throwaway client
+        throwaway = self.p4.fetch_client('shortcut_delete_me')
+        throwaway._root = self.client_root
+        self.p4.save_client(throwaway)
+        self.assertIn('shortcut_delete_me',
+                      [c['client'] for c in self.p4.run_clients()],
+                      "Throwaway client was not created")
+        self.p4.delete_client('shortcut_delete_me')
+        self.assertNotIn('shortcut_delete_me',
+                         [c['client'] for c in self.p4.run_clients()],
+                         "delete_client shortcut did not remove the client")
+
+        # iterate_ over an unknown spec list raises
+        self.assertRaises(Exception, self.p4.iterate_this_is_not_a_real_spec)
+
+        # __getattr__ on a non-prefixed name raises AttributeError
+        with self.assertRaises(AttributeError):
+            self.p4.totally_unknown_attribute
+
+    def testSpecValidation(self):
+        """Cover Spec.__setitem__ validation, case-insensitive keys and
+        permitted_fields()."""
+        self.p4.connect()
+        client = self.p4.fetch_client()
+
+        self.assertIsNotNone(client.permitted_fields(),
+                             "permitted_fields() must expose the field map")
+
+        # non-str / non-list value is rejected
+        self.assertRaises(P4.P4Exception, client.__setitem__, 'Description', 123)
+
+        # lower-case key is normalised to the canonical field name
+        client['description'] = "Case-insensitive key\n"
+        self.assertIn('Description', client,
+                      "Lower-case key was not normalised to canonical 'Description'")
+        self.assertEqual(client['Description'], "Case-insensitive key\n",
+                         "Normalised key stored the wrong value")
+
+        # an unknown field is rejected
+        self.assertRaises(P4.P4Exception, client.__setitem__, 'NoSuchField', 'x')
+
+    def testSpecAttributeAccess(self):
+        """Cover Spec.__getattr__/__setattr__ underscore syntax, the 'comment'
+        special case and AttributeError for non-underscore names."""
+        self.p4.connect()
+        client = self.p4.fetch_client()
+
+        # read via _attribute shorthand
+        self.assertEqual(client._root, client['Root'],
+                         "_root shorthand did not return the Root field")
+
+        # write via _attribute shorthand (normalises through __setitem__)
+        client._description = "Attribute access test\n"
+        self.assertEqual(client['Description'], "Attribute access test\n",
+                         "_description shorthand did not set the Description field")
+
+        # reading a non-underscore attribute raises AttributeError
+        with self.assertRaises(AttributeError):
+            client.notunderscored
+
+        # assigning a non-underscore attribute raises AttributeError
+        def _assign_bad():
+            client.notunderscored = "x"
+        self.assertRaises(AttributeError, _assign_bad)
+
+        # the 'comment' attribute is stored verbatim on __dict__
+        client.comment = "# a comment"
+        self.assertEqual(client.__dict__['comment'], "# a comment",
+                         "comment attribute was not stored on __dict__")
+
+    def testContextManagers(self):
+        """Cover while_tagged, at_exception_level, using_handler, saved_context
+        (with exception) and the __enter__/__exit__ protocol."""
+        self.p4.connect()
+        self._setClient()
+
+        old_tagged = self.p4.tagged
+        with self.p4.while_tagged(False):
+            self.assertFalse(self.p4.tagged, "while_tagged did not change tagged mode")
+        self.assertEqual(self.p4.tagged, old_tagged, "while_tagged did not restore tagged")
+
+        old_level = self.p4.exception_level
+        with self.p4.at_exception_level(P4.P4.RAISE_NONE):
+            self.assertEqual(self.p4.exception_level, P4.P4.RAISE_NONE,
+                             "at_exception_level did not change the level")
+        self.assertEqual(self.p4.exception_level, old_level,
+                         "at_exception_level did not restore the level")
+
+        handler = P4.OutputHandler()
+        with self.p4.using_handler(handler):
+            self.assertEqual(self.p4.handler, handler, "using_handler did not set the handler")
+        self.assertIsNone(self.p4.handler, "using_handler did not restore the handler")
+
+        # saved_context must restore even when the block raises
+        cwd = self.p4.cwd
+        try:
+            with self.p4.saved_context(cwd='/tmp'):
+                self.assertEqual(self.p4.cwd, '/tmp', "saved_context did not apply override")
+                raise RuntimeError("boom")
+        except RuntimeError:
+            pass
+        self.assertEqual(self.p4.cwd, cwd, "saved_context did not restore cwd after exception")
+
+        # context-manager protocol disconnects on exit
+        with P4.P4() as p4b:
+            p4b.port = self.port
+            p4b.user = self.p4.user
+            p4b.password = self.p4.password
+            p4b.connect()
+            self.assertTrue(p4b.connected(), "P4 context manager did not connect")
+        self.assertFalse(p4b.connected(), "__exit__ did not disconnect")
+
+    def testEncodingModes(self):
+        """Cover the run() encoding branch for utf-8 and raw modes."""
+        self.p4.connect()
+
+        # utf-8 mode: str arguments are encoded to bytes before being passed down
+        self.p4.encoding = 'utf-8'
+        self.assertEqual(self.p4.encoding, 'utf-8', "encoding attribute not set to utf-8")
+        info = self.p4.run_info()
+        self.assertIsInstance(info, list, "run_info() must still return a list under utf-8")
+
+        # raw mode: the encoding step is skipped and values come back as bytes
+        self.p4.encoding = 'raw'
+        self.assertEqual(self.p4.encoding, 'raw', "encoding attribute not set to raw")
+        info_raw = self.p4.run_info()[0]
+        self.assertEqual(type(info_raw['serverVersion']), bytes,
+                         "raw encoding must return bytes values")
+
+        # back under utf-8, a non-str (bytes) argument must be passed through
+        # the encoding step untouched
+        self.p4.encoding = 'utf-8'
+        changes = self.p4.run('changes', b'-m1')
+        self.assertIsInstance(changes, list,
+                              "bytes argument under utf-8 encoding was not handled")
+
+    def testLogMessages(self):
+        """Cover the run() logger integration: info logging on success and the
+        exception path that logs then re-raises."""
+        import logging
+        try:
+            from StringIO import StringIO
+        except ImportError:
+            from io import StringIO
+
+        self.p4.connect()
+
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.formatter = logging.Formatter('%(levelname)s:%(message)s')
+        logger = logging.getLogger('TestLogMessages')
+        logger.handlers = []
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        self.p4.logger = logger
+
+        # a successful command logs the command line at INFO
+        self.p4.run_info()
+        self.assertIn("INFO:p4 info", stream.getvalue(),
+                      "Successful command did not log at INFO")
+
+        # a failing command must log via the except path and still raise
+        stream.truncate(0)
+        stream.seek(0)
+        self.p4.exception_level = P4.P4.RAISE_ALL
+        self.assertRaises(P4Exception, self.p4.run_files, '//depot/does_not_exist')
+        self.assertIn("WARNING:", stream.getvalue(),
+                      "Exception path did not log the warning before re-raising")
+
+        self.p4.logger = None
+
+    def testLoggerSeverityLevels(self):
+        """Cover log_messages() mapping of severities 1/2/3 to info/warning/error
+        and the silent skip of any other severity."""
+        import logging
+        try:
+            from StringIO import StringIO
+        except ImportError:
+            from io import StringIO
+
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.formatter = logging.Formatter('%(levelname)s:%(message)s')
+        logger = logging.getLogger('TestLoggerSeverityLevels')
+        logger.handlers = []
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
+        class FakeMessage:
+            def __init__(self, severity, text):
+                self.severity = severity
+                self._text = text
+
+            def __str__(self):
+                return self._text
+
+        # duck-typed stand-in carrying the two attributes log_messages reads
+        class Holder:
+            pass
+
+        holder = Holder()
+        holder.logger = logger
+        holder.messages = [
+            FakeMessage(1, "info msg"),
+            FakeMessage(2, "warn msg"),
+            FakeMessage(3, "error msg"),
+            FakeMessage(0, "ignored empty"),
+            FakeMessage(4, "ignored fatal"),
+        ]
+
+        self.assertTrue(hasattr(P4.P4, 'log_messages'),
+                        "P4.P4.log_messages is missing — log_messages() was removed or renamed")
+        P4.P4.log_messages(holder)
+        out = stream.getvalue()
+        self.assertIn("INFO:info msg", out, "Severity 1 did not map to info")
+        self.assertIn("WARNING:warn msg", out, "Severity 2 did not map to warning")
+        self.assertIn("ERROR:error msg", out, "Severity 3 did not map to error")
+        self.assertNotIn("ignored empty", out, "Severity 0 should be skipped")
+        self.assertNotIn("ignored fatal", out, "Severity 4 should be skipped")
 
 
 if __name__ == '__main__':

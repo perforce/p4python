@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/P4API.cpp#66 $
+ * $Id: //depot/main/p4-python/P4API.cpp#67 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -203,6 +203,18 @@ static PyObject * P4Adapter_set_env(P4Adapter * self, PyObject *args)
 
     if ( PyArg_ParseTuple(args, "s|s", &var, &val) ) {
 	return self->clientAPI->SetEnv( var, val );
+    }
+
+    return NULL;
+}
+
+static PyObject * P4Adapter_set_var(P4Adapter * self, PyObject *args)
+{
+    const char * var;
+    const char * val;
+
+    if ( PyArg_ParseTuple(args, "ss", &var, &val) ) {
+	return self->clientAPI->SetVar( var, val );
     }
 
     return NULL;
@@ -639,6 +651,8 @@ static PyMethodDef P4Adapter_methods[] = {
      "Get values from the Perforce environment"},
     {"set_env", (PyCFunction)P4Adapter_set_env, METH_VARARGS,
      "Set values in the registry (if available on the platform) for the Perforce environment"},
+    {"set_var", (PyCFunction)P4Adapter_set_var, METH_VARARGS,
+     "Set a per-command server variable (e.g. limitMap0) on the underlying client"},
     {"run", (PyCFunction)P4Adapter_run, METH_VARARGS,
      "Runs a command"},
     {"format_spec", (PyCFunction)P4Adapter_formatSpec, METH_VARARGS,

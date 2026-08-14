@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-$Id: //depot/main/p4-python/PythonClientUser.cpp#37 $
+$Id: //depot/main/p4-python/PythonClientUser.cpp#38 $
 
 *******************************************************************************/
  
@@ -71,10 +71,10 @@ PythonClientUser::PythonClientUser( PythonDebug * dbg, p4py::SpecMgr *s )
     track = false;
     alive = 1;
     apiLevel = atoi( P4Tag::l_client );
-    
+
     Py_INCREF(Py_None);
     input = Py_None;
-    
+
     Py_INCREF(Py_None);
     resolver = Py_None;
 
@@ -83,6 +83,10 @@ PythonClientUser::PythonClientUser( PythonDebug * dbg, p4py::SpecMgr *s )
 
     Py_INCREF(Py_None);
     progress = Py_None;
+
+    pendingExcType = NULL;
+    pendingExcValue = NULL;
+    pendingExcTb = NULL;
 }
 
 PythonClientUser::~PythonClientUser()
@@ -91,6 +95,9 @@ PythonClientUser::~PythonClientUser()
     Py_DECREF(resolver);
     Py_DECREF(handler);
     Py_DECREF(progress);
+    Py_XDECREF(pendingExcType);
+    Py_XDECREF(pendingExcValue);
+    Py_XDECREF(pendingExcTb);
 }
 
 void PythonClientUser::Reset()
@@ -99,6 +106,49 @@ void PythonClientUser::Reset()
     // input data is untouched
 
     alive = 1; // yes, we want data from the server
+    ClearPendingException();
+}
+
+void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyObject *tb)
+{
+    // Clear any existing pending exception first
+    Py_XDECREF(pendingExcType);
+    Py_XDECREF(pendingExcValue);
+    Py_XDECREF(pendingExcTb);
+
+    // Store new exception (PyErr_Fetch already gave us owned references)
+    pendingExcType = type;
+    pendingExcValue = value;
+    pendingExcTb = tb;
+}
+
+bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, PyObject **tb)
+{
+    if (pendingExcType == NULL) {
+        return false;
+    }
+
+    *type = pendingExcType;
+    *value = pendingExcValue;
+    *tb = pendingExcTb;
+
+    // Transfer ownership - caller will use PyErr_Restore which steals references
+    pendingExcType = NULL;
+    pendingExcValue = NULL;
+    pendingExcTb = NULL;
+
+    return true;
+}
+
+void PythonClientUser::ClearPendingException()
+{
+    Py_XDECREF(pendingExcType);
+    Py_XDECREF(pendingExcValue);
+    Py_XDECREF(pendingExcTb);
+
+    pendingExcType = NULL;
+    pendingExcValue = NULL;
+    pendingExcTb = NULL;
 }
 
 void PythonClientUser::Finished()
@@ -127,6 +177,9 @@ bool PythonClientUser::CallOutputMethod( const char * method, PyObject * data)
 
     PyObject * result = PyObject_CallMethod( this->handler , (char*) method, (char*)"O", data );
     if( result == NULL ) { // exception thrown
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	SetPendingException(excType, excValue, excTb);
 	alive = 0;
     }
     else {
@@ -228,7 +281,7 @@ ClientProgress * PythonClientUser::CreateProgress( int type )
 	return NULL;
     }
 
-    return new PythonClientProgress(progress, type);
+    return new PythonClientProgress(this, progress, type);
 }
 
 void PythonClientUser::HandleError( Error *e )
@@ -588,14 +641,17 @@ int PythonClientUser::Resolve( ClientMerge *m, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"resolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	SetPendingException(excType, excValue, excTb);
+	Py_DECREF(mergeData);
 	return CMS_QUIT;
-    }
-    else {
-	Py_DECREF( result );
     }
 
     if (IsString(result)) {
         StrBuf reply = GetPythonString( result );
+        Py_DECREF( result );
+        Py_DECREF(mergeData);
 
         if( reply == "ay" ) 		return CMS_YOURS;
         else if( reply == "at" )	return CMS_THEIRS;
@@ -613,6 +669,8 @@ int PythonClientUser::Resolve( ClientMerge *m, Error *e )
         }
     }
     else {
+        Py_DECREF( result );
+        Py_DECREF(mergeData);
         PyErr_WarnEx( PyExc_UserWarning, "[P4::Resolve] Illegal response : Expected String", 1);
         return CMS_QUIT;
     }
@@ -666,13 +724,16 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"actionResolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
+	PyObject *excType, *excValue, *excTb;
+	PyErr_Fetch(&excType, &excValue, &excTb);
+	SetPendingException(excType, excValue, excTb);
+	Py_DECREF(mergeData);
 	return CMS_QUIT;
-    }
-    else {
-	Py_DECREF( result );
     }
 
     StrBuf reply = GetPythonString( result );
+    Py_DECREF( result );
+    Py_DECREF(mergeData);
 
     if( reply == "ay" ) 		return CMS_YOURS;
     else if( reply == "at" )	return CMS_THEIRS;

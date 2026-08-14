@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * $Id: //depot/main/p4-python/PythonClientUser.h#20 $
+ * $Id: //depot/main/p4-python/PythonClientUser.h#21 $
  *
  * Build instructions:
  *  Use Distutils - see accompanying setup.py
@@ -114,6 +114,11 @@ public:
     int ErrorCount();
     void Reset();
 
+    // Pending exception storage for callback exceptions
+    void SetPendingException(PyObject *type, PyObject *value, PyObject *tb);
+    bool GetPendingException(PyObject **type, PyObject **value, PyObject **tb);
+    void ClearPendingException();
+
     // override from KeepAlive
     virtual int IsAlive()
     {
@@ -139,6 +144,9 @@ private:
     int                 apiLevel;
     int                 alive;
     bool                track;
+    PyObject *          pendingExcType;
+    PyObject *          pendingExcValue;
+    PyObject *          pendingExcTb;
 };
 
 #endif

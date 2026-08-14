@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: //depot/main/p4-python/PythonClientProgress.h#1 $
+ * $Id: //depot/main/p4-python/PythonClientProgress.h#2 $
  *
  */
 
@@ -32,10 +32,12 @@
 #ifndef PYTHONCLIENTPROGRESS_H_
 #define PYTHONCLIENTPROGRESS_H_
 
+class PythonClientUser;
+
 class PythonClientProgress : public ClientProgress
 {
 public:
-    PythonClientProgress(PyObject * progress, int t);
+    PythonClientProgress(PythonClientUser *ui, PyObject * progress, int t);
     virtual ~PythonClientProgress();
 
 public:
@@ -45,6 +47,7 @@ public:
     virtual void	Done( int fail );
 
 private:
+    PythonClientUser *	ui;
     PyObject *	progress;
 };
 
