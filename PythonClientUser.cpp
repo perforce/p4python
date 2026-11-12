@@ -174,19 +174,22 @@ static const int CANCEL = 2;
 bool PythonClientUser::CallOutputMethod( const char * method, PyObject * data)
 {
     long answer = REPORT;
+    PyObject *excType, *excValue, *excTb;
 
     PyObject * result = PyObject_CallMethod( this->handler , (char*) method, (char*)"O", data );
     if( result == NULL ) { // exception thrown
-	PyObject *excType, *excValue, *excTb;
 	PyErr_Fetch(&excType, &excValue, &excTb);
 	SetPendingException(excType, excValue, excTb);
 	alive = 0;
     }
-    else {
+    else
+    {
 	long a = PyInt_AsLong( result );
 	Py_DECREF( result );
-	if( a == -1 ) {
-	    alive = 0; // exception thrown or silly return value
+	if( a == -1 && PyErr_Occurred()) {
+	    PyErr_Fetch(&excType, &excValue, &excTb);
+	    SetPendingException(excType, excValue, excTb);
+	    alive = 0;
 	}
 	else
 	{
