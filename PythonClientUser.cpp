@@ -111,6 +111,16 @@ void PythonClientUser::Reset()
 
 void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyObject *tb)
 {
+#if PY_MAJOR_VERSION >= 3
+    if (pendingExcValue)
+    {
+	PyErr_NormalizeException(&pendingExcType, &pendingExcValue, &pendingExcTb);
+	PyErr_NormalizeException(&type, &value, &tb);
+	Py_INCREF(pendingExcValue);
+	PyException_SetContext(value, pendingExcValue);
+    }
+#endif
+
     // Clear any existing pending exception first
     Py_XDECREF(pendingExcType);
     Py_XDECREF(pendingExcValue);
