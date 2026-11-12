@@ -1194,14 +1194,34 @@ static PyObject *
     	return NULL;
     
     PyObject * p4Module = PyImport_ImportModule("P4");
+    if (!p4Module)
+        return NULL;
     PyObject * p4Dict = PyModule_GetDict(p4Module);
+    if (!p4Dict) {
+        Py_DECREF(p4Module);
+        return NULL;
+    }
     PyObject * mapClass = PyDict_GetItemString(p4Dict, "Map");
     if (mapClass == NULL) {
-        cout << "Could not find class P4.Map" << endl;
-	return NULL;
+        Py_DECREF(p4Module);
+        PyErr_SetString(PyExc_AttributeError, "Could not find class P4.Map");
+        return NULL;
     }
 
     result = (P4Map *) PyObject_CallObject(mapClass, NULL);
+    Py_DECREF(p4Module);
+    if (!result)
+        return NULL;
+    int isMap = PyObject_IsInstance((PyObject *) result, (PyObject *) &P4MapType);
+    if (isMap < 0) {
+        Py_DECREF((PyObject *) result);
+        return NULL;
+    }
+    if (!isMap) {
+        Py_DECREF((PyObject *) result);
+        PyErr_SetString(PyExc_TypeError, "P4.Map constructor did not return a P4Map");
+        return NULL;
+    }
     delete result->map;
     result->map = p4py::P4MapMaker::Join(left->map, right->map);
     return (PyObject *) result;
