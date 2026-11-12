@@ -92,7 +92,11 @@ void PythonDebug::callLogger(const char * method, const char * text)
 
     PyObject * result = PyObject_CallMethod( logger , (char*) method, (char*)"(s)", text );
     if( result == NULL ) { // exception thrown
-	cerr << "Failed to call " << method << " on logger with (" << text << ")" << endl;
+	PyErr_WriteUnraisable(logger);
+    }
+    else
+    {
+	Py_DECREF(result);
     }
 }
 
