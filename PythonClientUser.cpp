@@ -545,16 +545,36 @@ void PythonClientUser::InputData( StrBuf *strbuf, Error *e )
     debug->debug ( P4PYDBG_CALLS, "[P4] InputData(). Using supplied input" );
 
     PyObject * inval = input;
+    PyObject * tail = input;
+    Py_INCREF(inval);
 
-    if( PyTuple_Check(input) )
+    if( PyTuple_Check(input) && PyTuple_Size(input) > 0 )
     {
+	PyObject *tmp = inval;
 	inval = PyTuple_GetItem(input, 0);
-	input = PyTuple_GetSlice(input, 1, PyTuple_Size(input));
+	Py_INCREF(inval);
+	Py_DECREF(tmp);
+	tail = PyTuple_GetSlice(input, 1, PyTuple_Size(input));
     }
-    else if ( PyList_Check(input) )
+    else if ( PyList_Check(input) && PyList_Size(input) > 0 )
     {
-    	inval = PyList_GetItem(input, 0);
-	input = PyList_GetSlice(input, 1, PyList_Size(input));
+	PyObject *tmp = inval;
+	inval = PyList_GetItem(input, 0);
+	Py_INCREF(inval);
+	Py_DECREF(tmp);
+	tail = PyList_GetSlice(input, 1, PyList_Size(input));
+    }
+    if (tail == NULL)
+    {
+	// slice failed, nothing we can do about it
+	Py_CLEAR(inval);
+	PyErr_WriteUnraisable(Py_None);
+    }
+    else if (tail != input)
+    {
+	PyObject *tmp = input;
+	input = tail;
+	Py_DECREF(tmp);
     }
     
     if( inval == Py_None || inval == NULL )
@@ -562,6 +582,7 @@ void PythonClientUser::InputData( StrBuf *strbuf, Error *e )
 	PyErr_WarnEx( PyExc_UserWarning, 
 		"[P4] Expected user input, found none. "
 		"Missing call to P4.input ?", 1 );
+	Py_XDECREF(inval);
 	return;
     }
 
@@ -571,11 +592,21 @@ void PythonClientUser::InputData( StrBuf *strbuf, Error *e )
 
 	specMgr->AddSpecDef( cmd.Text(), specDef->Text() );
 	specMgr->SpecToString( cmd.Text(), inval, *strbuf, e );
+	Py_DECREF(inval);
 	return;
     }
     
     // Convert whatever's left into a string
     PyObject * str = PyObject_Str(inval);
+    Py_DECREF(inval);
+    if (!str)
+    {
+        PyErr_WarnEx( PyExc_UserWarning,
+		"[P4] Failed to convert input to string", 1 );
+	PyErr_Clear();
+        return;
+    }
+
     strbuf->Set( GetPythonString(str) );
     Py_XDECREF(str);
 }
