@@ -51,6 +51,7 @@ $Id: //depot/main/p4-python/PythonClientUser.cpp#38 $
 #include "SpecMgr.h"
 #include "P4Result.h"
 #include "PythonClientUser.h"
+#include "PythonClientUserHelper.h"
 #include "PythonClientAPI.h"
 #include "P4PythonDebug.h"
 #include "PythonThreadGuard.h"
@@ -120,6 +121,12 @@ void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyOb
     pendingExcType = type;
     pendingExcValue = value;
     pendingExcTb = tb;
+}
+
+void PythonClientUserSetPendingException(PythonClientUser *ui,
+        PyObject *type, PyObject *value, PyObject *tb)
+{
+    ui->SetPendingException(type, value, tb);
 }
 
 bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, PyObject **tb)
