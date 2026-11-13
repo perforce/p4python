@@ -1495,6 +1495,48 @@ class TestP4(TestP4Python):
         self.p4.logger = None
         self.assertEqual(self.p4.logger, None, "Logger not reset correctly")
 
+    def testLoggerExceptionIsUnraisable(self):
+        if not hasattr(sys, "unraisablehook"):
+            self.skipTest("sys.unraisablehook is not available")
+
+        class RaisingLogger:
+            def info(self, message):
+                if message.startswith("[P4]"):
+                    raise ValueError("logger callback failed")
+
+            def debug(self, message):
+                pass
+
+            def warning(self, message):
+                pass
+
+            def error(self, message):
+                pass
+
+            def critical(self, message):
+                pass
+
+        logger = RaisingLogger()
+        original_logger = self.p4.logger
+        original_hook = sys.unraisablehook
+        unraisable = []
+
+        self.p4.connect()
+        try:
+            self.p4.logger = logger
+            self.p4.debug = 1
+            sys.unraisablehook = unraisable.append
+            result = self.p4.run_info()
+        finally:
+            sys.unraisablehook = original_hook
+            self.p4.logger = original_logger
+
+        self.assertTrue(result, "p4 info failed after an unraisable logger exception")
+        self.assertEqual(len(unraisable), 1, "Logger exception was not reported as unraisable")
+        self.assertIs(unraisable[0].exc_type, ValueError)
+        self.assertEqual(str(unraisable[0].exc_value), "logger callback failed")
+        self.assertIs(unraisable[0].object, logger)
+
     def testDVCS_init( self ):
         self.p4.connect()
         current_pwd = self.server_root
