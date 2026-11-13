@@ -1237,6 +1237,36 @@ class TestP4(TestP4Python):
                                "Progress done callback was skipped after an exception")
             self.assertTrue(os.path.exists(cancel_files[-1]),
                             "Returning 1 alone unexpectedly aborted sync")
+
+            class AlwaysAlive:
+                def __init__(self):
+                    self.calls = 0
+
+                def __call__(self):
+                    self.calls += 1
+                    return True
+
+            keepalive = AlwaysAlive()
+            self.p4.setbreak(keepalive)
+
+            class RaisingProgress(P4.Progress):
+                def __init__(self):
+                    P4.Progress.__init__(self)
+                    self.keepaliveCallsAtException = None
+
+                def update(self, position):
+                    self.keepaliveCallsAtException = keepalive.calls
+                    raise RuntimeError("Progress interrupted with custom keepalive")
+
+            raising_progress = RaisingProgress()
+            with self.assertRaises(RuntimeError) as cm:
+                self.p4.run_sync('-f', '-q', '//depot/%s/000_large_file' % cancel_dir,
+                                 progress=raising_progress)
+            self.assertEqual(str(cm.exception), "Progress interrupted with custom keepalive")
+            self.assertGreater(raising_progress.keepaliveCallsAtException, 0,
+                               "Custom KeepAlive was not called before the Progress error")
+            self.assertEqual(keepalive.calls, raising_progress.keepaliveCallsAtException,
+                             "Internal Progress abort did not suppress the Python KeepAlive callback")
         else:
             print("Test case testProgress needs a 2012.2+ Perforce Server to run")
 
