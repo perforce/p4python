@@ -69,6 +69,7 @@ PythonClientAPI::PythonClientAPI()
     : ui(&debug, &specMgr),
       specMgr(&debug)
 {
+    breakCallback = NULL;
     server2 = 0;
     depth = 0;
     exceptionLevel = 2;
@@ -123,11 +124,13 @@ PythonClientAPI::~PythonClientAPI()
     // can't use logger here, probably already destructed at this time
     debug.printDebug(P4PYDBG_GC, "Destructor PythonClientAPI::~PythonClientAPI called");
 
+    client.SetBreak(NULL);
     if( IsConnected() ) {
 	Error e;
 	client.Final( &e );
 	// Ignore errors
     }
+    delete breakCallback;
     delete enviro;
 }
 
@@ -724,7 +727,11 @@ PyObject * PythonClientAPI::ConnectOrReconnect()
     // If an iterator is defined, reset the break functionality
     // for the KeepAlive function
 
-    if( ui.GetHandler() != Py_None )
+    if( breakCallback )
+    {
+	client.SetBreak( breakCallback );
+    }
+    else if( ui.GetHandler() != Py_None )
     {
 	client.SetBreak( &ui );
     }
@@ -905,7 +912,9 @@ int PythonClientAPI::SetHandler( PyObject * iterator )
 	return -1;
     }
 
-    if( iterator == Py_None)
+    if( breakCallback )
+	client.SetBreak( breakCallback );
+    else if( iterator == Py_None)
 	client.SetBreak(NULL);
     else
 	client.SetBreak(&ui);
@@ -1303,11 +1312,14 @@ void PythonClientAPI::RunCmd(const char *cmd, ClientUser *ui, int argc, char * c
 
 }
 
-void PythonClientAPI::SetBreak(PythonKeepAlive* cb)
+void PythonClientAPI::SetBreak(PyObject* callable)
 {
     if( IsConnected() ) {
         debug.debug(P4PYDBG_COMMANDS, "[P4] Establish the callback" );
+        PythonKeepAlive *cb = new PythonKeepAlive(&ui, callable);
         client.SetBreak(cb);
+        delete breakCallback;
+        breakCallback = cb;
     }
 
 }

@@ -617,9 +617,7 @@ static PyObject* P4Adapter_setBreak(P4Adapter* self, PyObject* args) {
         return NULL;
     }
 
-    // Create an object pointer of PythonKeepAlive and pass py_callable
-    PythonKeepAlive* cb = new PythonKeepAlive(py_callable);
-    self->clientAPI->SetBreak(cb);
+    self->clientAPI->SetBreak(py_callable);
 
     Py_RETURN_NONE;
 }

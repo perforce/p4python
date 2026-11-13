@@ -42,7 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "PythonThreadGuard.h"
 #include "PythonKeepAlive.h"
 
-PythonKeepAlive::PythonKeepAlive(PyObject* callable) : py_callable(callable) {
+PythonKeepAlive::PythonKeepAlive(PythonClientUser* ui, PyObject* callable)
+    : py_ui(ui), py_callable(callable) {
     // Increment the reference count for the callable
     Py_XINCREF(py_callable);
 }
@@ -62,7 +63,7 @@ int PythonKeepAlive::IsAlive() {
             Py_DECREF(result);
             return( 0 ); // To terminate the connection
         }
-        
+
         return( 1 );
     }
 
