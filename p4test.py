@@ -2094,6 +2094,21 @@ class TestP4(TestP4Python):
         self.assertEqual(str(cm.exception), 'boom from outputStat')
         self.p4.handler = None
 
+        class InvalidReturnOutputHandler(P4.OutputHandler):
+            def __init__(self):
+                self.called = False
+
+            def outputStat(self, stat):
+                self.called = True
+                return "not an integer"
+
+        handler = InvalidReturnOutputHandler()
+        self.p4.handler = handler
+        with self.assertRaises(TypeError):
+            self.p4.run('info')
+        self.assertTrue(handler.called, "outputStat handler was not invoked")
+        self.p4.handler = None
+
         # Verify connection is still usable
         result = self.p4.run('info')
         self.assertTrue(len(result) > 0, "Connection should remain usable after callback exception")
