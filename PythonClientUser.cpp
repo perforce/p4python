@@ -107,7 +107,6 @@ void PythonClientUser::Reset()
     // input data is untouched
 
     alive = 1; // yes, we want data from the server
-    ClearPendingException();
 }
 
 void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyObject *tb)
