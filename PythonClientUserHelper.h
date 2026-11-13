@@ -7,5 +7,6 @@ class PythonClientUser;
 
 void PythonClientUserSetPendingException(PythonClientUser *ui,
         PyObject *type, PyObject *value, PyObject *tb);
+int PythonClientUserIsAlive(PythonClientUser *ui);
 
 #endif

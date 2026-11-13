@@ -58,6 +58,10 @@ int PythonKeepAlive::IsAlive() {
 
     EnsurePythonLock guard;
 
+    if (!PythonClientUserIsAlive(py_ui)) {
+        return( 0 );
+    }
+
     if (py_callable && PyCallable_Check(py_callable)) {
         PyObject* result = PyObject_CallObject(py_callable, NULL);
         if (result == NULL) {
