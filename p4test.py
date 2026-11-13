@@ -1188,9 +1188,10 @@ class TestP4(TestP4Python):
             for fname in cancel_files:
                 os.remove(fname)
 
-            class CancelOnUpdate(P4.Progress):
+            class CancelOnUpdate(P4.Progress, P4.OutputHandler):
                 def __init__(self):
                     P4.Progress.__init__(self)
+                    P4.OutputHandler.__init__(self)
                     self.updateCalls = 0
                     self.exceptionRaised = False
                     self.callsAfterException = 0
@@ -1224,8 +1225,9 @@ class TestP4(TestP4Python):
 
             cancel_callback = CancelOnUpdate()
             with self.assertRaises(RuntimeError) as cm:
-                self.p4.run_sync('-f', '-q', '//depot/%s/000_large_file' % cancel_dir,
-                                 progress=cancel_callback)
+                self.p4.run_sync('-f', '//depot/%s/...' % cancel_dir,
+                                 progress=cancel_callback,
+                                 handler=cancel_callback)
             self.assertEqual(str(cm.exception), "Progress update interrupted sync")
             self.assertGreater(cancel_callback.updateCalls, 0,
                                "Progress update callback was not invoked")
@@ -1233,6 +1235,8 @@ class TestP4(TestP4Python):
                              "Progress callback ran again before Done after an exception")
             self.assertGreater(cancel_callback.doneAfterException, 0,
                                "Progress done callback was skipped after an exception")
+            self.assertTrue(os.path.exists(cancel_files[-1]),
+                            "Returning 1 alone unexpectedly aborted sync")
         else:
             print("Test case testProgress needs a 2012.2+ Perforce Server to run")
 
