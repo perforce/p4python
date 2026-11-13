@@ -285,6 +285,7 @@ private:
 
     void	InitFlags()		{ flags = S_INITIAL_STATE;	}
     void	ResetFlags()		{ flags &= ~S_RESET_MASK;	}
+    void	SetBreakHandler();
 
     void	SetTag()		{ flags |= S_TAGGED;		}
     void	ClearTag()		{ flags &= ~S_TAGGED;		}

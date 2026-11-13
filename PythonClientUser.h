@@ -124,6 +124,10 @@ public:
     {
         return alive;
     }
+    void SetAlive(bool isAlive)
+    {
+        alive = isAlive;
+    }
 
 private:
     PyObject * MkMergeInfo(ClientMerge *m, StrPtr &hint);

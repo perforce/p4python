@@ -724,17 +724,7 @@ PyObject * PythonClientAPI::ConnectOrReconnect()
     if ( e.Test() )
 	Py_RETURN_FALSE;
 
-    // If an iterator is defined, reset the break functionality
-    // for the KeepAlive function
-
-    if( breakCallback )
-    {
-	client.SetBreak( breakCallback );
-    }
-    else if( ui.GetHandler() != Py_None )
-    {
-	client.SetBreak( &ui );
-    }
+    SetBreakHandler();
 
     SetConnected();
     Py_RETURN_NONE;
@@ -912,12 +902,7 @@ int PythonClientAPI::SetHandler( PyObject * iterator )
 	return -1;
     }
 
-    if( breakCallback )
-	client.SetBreak( breakCallback );
-    else if( iterator == Py_None)
-	client.SetBreak(NULL);
-    else
-	client.SetBreak(&ui);
+    SetBreakHandler();
 
     return 0;
 }
@@ -936,7 +921,25 @@ int PythonClientAPI::SetProgress( PyObject * progress )
 	return -1;
     }
 
+    SetBreakHandler();
+
     return 0;
+}
+
+void PythonClientAPI::SetBreakHandler()
+{
+    if( breakCallback ) {
+	client.SetBreak( breakCallback );
+	return;
+    }
+
+    PyObject *handler = ui.GetHandler();
+    PyObject *progress = ui.GetProgress();
+    bool hasCallback = handler != Py_None || progress != Py_None;
+    Py_DECREF(handler);
+    Py_DECREF(progress);
+
+    client.SetBreak( hasCallback ? &ui : NULL );
 }
 
 PyObject * PythonClientAPI::GetProgress()
