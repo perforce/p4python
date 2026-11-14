@@ -123,9 +123,14 @@ P4Adapter_init(P4Adapter *self, PyObject *args, PyObject *kwds)
 	    if (PyInt_Check(value)) {
 	    	PythonClientAPI::intsetter isetter = self->clientAPI->GetIntSetter(name);
 	    	if (isetter) {
-	    	    int result = (self->clientAPI->*isetter)(PyInt_AS_LONG(value));
-		    if (result) 
-			return result;
+                long lval = PyInt_AsLong(value);
+                if (lval == -1 && PyErr_Occurred())
+                    return -1;
+                if (lval < INT_MIN || lval > INT_MAX)
+                    return PyErr_SetString(PyExc_OverflowError, "integer out of range"), -1;
+                int result = (self->clientAPI->*isetter)((int)lval);
+                if (result)
+                    return result;
 	    	}
 	    	else {
 	    	    ostringstream os;
@@ -730,7 +735,12 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     if (PyInt_Check(value)) {
     	PythonClientAPI::intsetter isetter = self->clientAPI->GetIntSetter(name);
     	if (isetter) {
-    	    return (self->clientAPI->*isetter)(PyInt_AS_LONG(value));
+            long lval = PyInt_AsLong(value);
+            if (lval == -1 && PyErr_Occurred())
+                return -1;
+            if (lval < INT_MIN || lval > INT_MAX)
+                return PyErr_SetString(PyExc_OverflowError, "integer attribute value out of range"), -1;
+            return (self->clientAPI->*isetter)((int)lval);
     	}
     	else {
     	    ostringstream os;
@@ -1541,4 +1551,3 @@ initP4API(void)
     return module;
 #endif
 }
-
