@@ -679,6 +679,14 @@ int PythonClientUser::Resolve( ClientMerge *m, Error *e )
 /*
  * Resolver method for action resolve
  */
+
+#define BAIL_OUT_EXC() do {\
+    PyObject *excType, *excValue, *excTb; \
+	PyErr_Fetch(&excType, &excValue, &excTb); \
+	SetPendingException(excType, excValue, excTb); \
+    return CMS_QUIT; \
+} while (0)
+
 int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
 {
     debug->debug ( P4PYDBG_CALLS, "[P4] Resolve(Action)" );
@@ -694,8 +702,9 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
             return m->Resolve( 0, e ); /* no preview, actually do it */
         }
         else {
-            PyErr_WarnEx( PyExc_UserWarning,
-                          "[P4::Resolve] Resolve called with no resolver and no input -> skipping resolve", 1);
+            if ( PyErr_WarnEx( PyExc_UserWarning,
+                          "[P4::Resolve] Resolve called with no resolver and no input -> skipping resolve", 1) != 0 )
+                BAIL_OUT_EXC();
             return CMS_QUIT;
         }
     }
@@ -721,19 +730,23 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
     }
 
     PyObject * mergeData = MkActionMergeInfo( m, t );
+    if ( mergeData == NULL )
+	BAIL_OUT_EXC();
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"actionResolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	Py_DECREF(mergeData);
-	return CMS_QUIT;
+	Py_DECREF( mergeData );
+	BAIL_OUT_EXC();
     }
+    Py_DECREF( mergeData );
 
-    StrBuf reply = GetPythonString( result );
+    const char *tmp = GetPythonString( result );
+    if ( tmp == NULL ) {
+	Py_DECREF( result );
+	BAIL_OUT_EXC();
+    }
+    StrBuf reply = tmp;
     Py_DECREF( result );
-    Py_DECREF(mergeData);
 
     if( reply == "ay" ) 		return CMS_YOURS;
     else if( reply == "at" )	return CMS_THEIRS;
@@ -745,10 +758,12 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
 	warning << reply;
 	warning << "', skipping resolve";
 
-	PyErr_WarnEx( PyExc_UserWarning, warning.Text(), 1);
+	if ( PyErr_WarnEx( PyExc_UserWarning, warning.Text(), 1) != 0 )
+	    BAIL_OUT_EXC();
 	return CMS_QUIT;
-    }
+	}
 }
+#undef BAIL_OUT_EXC
 
 /*
  * Accept input from Python. We just save what we're given here because we may not 
@@ -867,8 +882,17 @@ PyObject * PythonClientUser::MkActionMergeInfo( ClientResolveA *m, StrPtr &hint 
 
     // retrieve the last entry in the result array
     PyObject * output = results.GetOutputInternal();
+    if (output == NULL) {
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_RuntimeError, "Missing internal output");
+        return NULL;
+    }
     Py_ssize_t len = PyList_Size(output);
+    if (len < 0)
+        return NULL;
     PyObject * info = PyList_GetItem(output, len - 1);
+    if (info == NULL)
+        return NULL;
 
     P4ActionMergeData *mergeObj = PyObject_New(P4ActionMergeData, &P4ActionMergeDataType);
     if (mergeObj != NULL) {
