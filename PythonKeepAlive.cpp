@@ -40,9 +40,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Python.h>
 #include <keepalive.h>
 #include "PythonThreadGuard.h"
+#include "PythonClientUserHelper.h"
 #include "PythonKeepAlive.h"
 
-PythonKeepAlive::PythonKeepAlive(PyObject* callable) : py_callable(callable) {
+PythonKeepAlive::PythonKeepAlive(PythonClientUser* ui, PyObject* callable)
+    : py_ui(ui), py_callable(callable) {
     // Increment the reference count for the callable
     Py_XINCREF(py_callable);
 }
@@ -56,14 +58,25 @@ int PythonKeepAlive::IsAlive() {
 
     EnsurePythonLock guard;
 
+    if (!PythonClientUserIsAlive(py_ui)) {
+        return( 0 );
+    }
+
     if (py_callable && PyCallable_Check(py_callable)) {
         PyObject* result = PyObject_CallObject(py_callable, NULL);
-        if (result != NULL && PyLong_Check(result) && PyLong_AsLong(result) == 0) {
-            Py_DECREF(result);
-            return( 0 ); // To terminate the connection
+        if (result == NULL) {
+            PythonClientUserSetPendingCurrentException(py_ui);
+            return( 0 );
         }
-        
-        return( 1 );
+
+        int alive = PyObject_IsTrue(result);
+        Py_DECREF(result);
+        if (alive < 0) {
+            PythonClientUserSetPendingCurrentException(py_ui);
+            return( 0 );
+        }
+
+        return alive;
     }
 
     return( 1 ); // Default to true if callable is not set or failed

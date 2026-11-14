@@ -1807,6 +1807,17 @@ class TestP4(TestP4Python):
                 if self.counter > self.total_count:
                     return 0
                 return 1
+
+        class RaisingKeepAlive:
+            def __init__(self):
+                self.called = False
+
+            def isAlive(self):
+                self.called = True
+                raise KeyboardInterrupt("KeepAlive callback interrupted command")
+
+            def __call__(self):
+                return self.isAlive()
         
         #create a multiple changelist revision
         for i in range(100):
@@ -1913,6 +1924,22 @@ class TestP4(TestP4Python):
             _p4d_proc2.kill()
             _p4d_proc2.wait()
 
+            # --- Case 3: callback exceptions propagate out of the command ---
+            _p4d_proc3, _free_port3 = _start_tcp_p4d()
+            _p4_tcp3 = _connect_tcp(_free_port3)
+            raising_ka = RaisingKeepAlive()
+            _p4_tcp3.setbreak(raising_ka)
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    _p4_tcp3.run("changes")
+                self.assertTrue(raising_ka.called, "isAlive callback was not invoked")
+            finally:
+                try:
+                    _p4_tcp3.disconnect()
+                finally:
+                    _p4d_proc3.kill()
+                    _p4d_proc3.wait()
+
             # Replace self.p4 with fresh unconnected object so tearDown skips
             # disconnect on the stale RSH connection.
             self.p4 = P4.P4()
@@ -1932,6 +1959,14 @@ class TestP4(TestP4Python):
             self.p4.setbreak(ka)
             total_files = len(self.p4.run("changes"))
             self.assertEqual(100, total_files, "Setbreak is not working")
+            self.p4.disconnect()
+
+            self.p4.connect()
+            raising_ka = RaisingKeepAlive()
+            self.p4.setbreak(raising_ka)
+            with self.assertRaises(KeyboardInterrupt):
+                self.p4.run("changes")
+            self.assertTrue(raising_ka.called, "isAlive callback was not invoked")
             self.p4.disconnect()
             return
 
