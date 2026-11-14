@@ -850,6 +850,29 @@ class TestP4(TestP4Python):
 
             self.assertEqual(len(result), 2, "No two resolves scheduled")
 
+            class InvalidActionResolver(P4.Resolver):
+                def __init__(self, value):
+                    self.value = value
+                    self.called = False
+
+                def actionResolve(self, mergeData):
+                    self.called = True
+                    return self.value
+
+            for value, error in ((object(), TypeError), ('\ud800', UnicodeEncodeError)):
+                resolver = InvalidActionResolver(value)
+                with self.assertRaises(error):
+                    self.p4.run_resolve(resolver=resolver)
+                self.assertTrue(resolver.called)
+
+            import warnings
+            resolver = InvalidActionResolver('invalid')
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', UserWarning)
+                with self.assertRaisesRegex(UserWarning, 'Illegal response'):
+                    self.p4.run_resolve(resolver=resolver)
+            self.assertTrue(resolver.called)
+
             class ActionResolver(P4.Resolver):
                 def __init__(self, testObject):
                     self.t = testObject
