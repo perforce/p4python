@@ -944,6 +944,32 @@ class TestP4(TestP4Python):
         self.assertEqual( map.translate("a/foo", 0), "//depot/a/foo", "P4Map.translate not handled correctly")
         self.assertEqual( map.translate_array("//depot/a/foo"), ["b/foo", "a/foo"], "P4Map.translate not handled correctly")
 
+    def testMapJoinConstructorErrors(self):
+        from unittest.mock import patch
+
+        left, right = P4.Map(), P4.Map()
+        join = P4.Map.join
+        original_refcount = sys.getrefcount(P4)
+        for _ in range(10):
+            self.assertIsInstance(join(left, right), P4.Map)
+        self.assertEqual(sys.getrefcount(P4), original_refcount)
+
+        with patch.object(P4, 'Map', return_value=object()):
+            with self.assertRaisesRegex(TypeError, 'did not return a P4Map'):
+                join(left, right)
+
+        with patch.object(P4, 'Map', side_effect=ValueError('constructor failed')):
+            with self.assertRaisesRegex(ValueError, 'constructor failed'):
+                join(left, right)
+
+        map_class = P4.Map
+        try:
+            del P4.Map
+            with self.assertRaisesRegex(AttributeError, 'Could not find class P4.Map'):
+                join(left, right)
+        finally:
+            P4.Map = map_class
+
     def testThreads( self ):
             import threading
 
