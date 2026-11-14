@@ -2787,6 +2787,43 @@ class TestP4(TestP4Python):
         changes = self.p4.run('changes', b'-m1')
         self.assertIsInstance(changes, list,
                               "bytes argument under utf-8 encoding was not handled")
+        info_bytes = self.p4.run(b'info')
+        self.assertIsInstance(info_bytes, list,
+                              "bytes command under utf-8 encoding was not handled")
+
+    def testRunArgumentConversionErrors(self):
+        """Check that run() propagates conversion errors and releases converted args."""
+        class Stringifiable:
+            def __str__(self):
+                return shared_string
+
+        class RaisesOnString:
+            def __str__(self):
+                raise ValueError("argument conversion failed")
+
+        shared_string = "converted argument"
+        original_refcount = sys.getrefcount(shared_string)
+
+        with self.assertRaises(ValueError) as context:
+            self.p4.run('info', Stringifiable(), RaisesOnString())
+        self.assertEqual(str(context.exception), "argument conversion failed")
+        self.assertEqual(sys.getrefcount(shared_string), original_refcount,
+                         "Converted argument was not released after a later conversion failed")
+
+        with self.assertRaises(UnicodeEncodeError):
+            self.p4.run('info', Stringifiable(), '\ud800')
+        self.assertEqual(sys.getrefcount(shared_string), original_refcount,
+                         "Converted argument was not released after UTF-8 conversion failed")
+
+        # The Python wrapper must also surface errors while encoding str arguments.
+        self.p4.encoding = 'ascii'
+        with self.assertRaises(UnicodeEncodeError):
+            self.p4.run('info', '\u2603')
+
+        # An empty argument list must fail cleanly before attempting to execute a command.
+        with self.assertRaises(RuntimeError) as context:
+            self.p4.run()
+        self.assertEqual(str(context.exception), "No command provided")
 
     def testLogMessages(self):
         """Cover the run() logger integration: info logging on success and the
