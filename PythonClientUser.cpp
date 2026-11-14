@@ -125,6 +125,9 @@ void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyOb
 bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, PyObject **tb)
 {
     if (pendingExcType == NULL) {
+        *type = NULL;
+        *value = NULL;
+        *tb = NULL;
         return false;
     }
 
@@ -138,6 +141,29 @@ bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, Py
     pendingExcTb = NULL;
 
     return true;
+}
+
+bool PythonClientUser::SetPendingCurrentException()
+{
+    if (PyErr_Occurred())
+    {
+        PyObject *excType, *excValue, *excTb;
+        PyErr_Fetch(&excType, &excValue, &excTb);
+        SetPendingException(excType, excValue, excTb);
+        return true;
+    }
+    return false;
+}
+
+bool PythonClientUser::RaisePendingException()
+{
+    PyObject *excType, *excValue, *excTb;
+    if (GetPendingException(&excType, &excValue, &excTb))
+    {
+        PyErr_Restore(excType, excValue, excTb);
+        return true;
+    }
+    return false;
 }
 
 void PythonClientUser::ClearPendingException()
@@ -177,10 +203,8 @@ bool PythonClientUser::CallOutputMethod( const char * method, PyObject * data)
 
     PyObject * result = PyObject_CallMethod( this->handler , (char*) method, (char*)"O", data );
     if( result == NULL ) { // exception thrown
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	alive = 0;
+        SetPendingCurrentException();
+        alive = 0;
     }
     else {
 	long a = PyInt_AsLong( result );
@@ -544,39 +568,84 @@ void PythonClientUser::InputData( StrBuf *strbuf, Error *e )
     
     debug->debug ( P4PYDBG_CALLS, "[P4] InputData(). Using supplied input" );
 
-    PyObject * inval = input;
+    // first, convert an input tuple to a list
+    if ( PyTuple_Check(input) )
+    {
+        PyObject *tmp = PySequence_List(input);
+        if (!tmp) {
+            SetPendingCurrentException();
+            return;
+        }
+        Py_DECREF(input);
+        input = tmp;
+    }
 
-    if( PyTuple_Check(input) )
+    PyObject * inval = input;
+    PyObject * tail = input;
+    Py_INCREF(inval);
+
+    if ( PyList_Check(input) )
     {
-	inval = PyTuple_GetItem(input, 0);
-	input = PyTuple_GetSlice(input, 1, PyTuple_Size(input));
+        if ( PyList_Size(input) > 0 )
+        {
+            // grab the first element of the list as the input value, keep the rest
+            PyObject *tmp = inval;
+            inval = PyList_GetItem(input, 0);
+            Py_INCREF(inval);
+            Py_DECREF(tmp);
+            tail = PyList_GetSlice(input, 1, PyList_Size(input));
+            if (tail)
+            {
+                PyObject *tmp = input;
+                input = tail;
+                Py_DECREF(tmp);
+            }
+            else
+            {
+                // slice failed, nothing we can do about it
+                Py_CLEAR(inval);
+                SetPendingCurrentException();
+                return;
+            }
+        }
+        else
+        {
+            Py_CLEAR(inval);
+        }
     }
-    else if ( PyList_Check(input) )
-    {
-    	inval = PyList_GetItem(input, 0);
-	input = PyList_GetSlice(input, 1, PyList_Size(input));
-    }
-    
+
     if( inval == Py_None || inval == NULL )
     {
-	PyErr_WarnEx( PyExc_UserWarning, 
-		"[P4] Expected user input, found none. "
-		"Missing call to P4.input ?", 1 );
-	return;
+        Py_XDECREF(inval);
+        if (PyErr_WarnEx( PyExc_UserWarning,
+                "[P4] Expected user input, found none. "
+                "Missing call to P4.input ?", 1 ))
+            SetPendingCurrentException();
+        return;
     }
 
     if ( PyDict_Check( inval ) )
     {
-	StrPtr * specDef = varList->GetVar( "specdef" );
+        StrPtr * specDef = varList->GetVar( "specdef" );
 
-	specMgr->AddSpecDef( cmd.Text(), specDef->Text() );
-	specMgr->SpecToString( cmd.Text(), inval, *strbuf, e );
-	return;
+        specMgr->AddSpecDef( cmd.Text(), specDef->Text() );
+        specMgr->SpecToString( cmd.Text(), inval, *strbuf, e );
+        Py_DECREF(inval);
+        return;
     }
     
     // Convert whatever's left into a string
     PyObject * str = PyObject_Str(inval);
-    strbuf->Set( GetPythonString(str) );
+    const char * s = str ? GetPythonString(str) : NULL;
+    Py_DECREF(inval);
+    if (!str || !s)
+    {
+        SetPendingCurrentException();
+        Py_XDECREF(str);
+        return;
+    }
+
+    strbuf->Set( s );
     Py_XDECREF(str);
 }
 
@@ -641,11 +710,9 @@ int PythonClientUser::Resolve( ClientMerge *m, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"resolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	Py_DECREF(mergeData);
-	return CMS_QUIT;
+        SetPendingCurrentException();
+        Py_DECREF(mergeData);
+        return CMS_QUIT;
     }
 
     if (IsString(result)) {
@@ -724,11 +791,9 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"actionResolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	Py_DECREF(mergeData);
-	return CMS_QUIT;
+        SetPendingCurrentException();
+        Py_DECREF(mergeData);
+        return CMS_QUIT;
     }
 
     StrBuf reply = GetPythonString( result );
