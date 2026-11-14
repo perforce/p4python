@@ -65,18 +65,14 @@ int PythonKeepAlive::IsAlive() {
     if (py_callable && PyCallable_Check(py_callable)) {
         PyObject* result = PyObject_CallObject(py_callable, NULL);
         if (result == NULL) {
-            PyObject *excType, *excValue, *excTb;
-            PyErr_Fetch(&excType, &excValue, &excTb);
-            PythonClientUserSetPendingException(py_ui, excType, excValue, excTb);
+            PythonClientUserSetPendingCurrentException(py_ui);
             return( 0 );
         }
 
         int alive = PyObject_IsTrue(result);
         Py_DECREF(result);
         if (alive < 0) {
-            PyObject *excType, *excValue, *excTb;
-            PyErr_Fetch(&excType, &excValue, &excTb);
-            PythonClientUserSetPendingException(py_ui, excType, excValue, excTb);
+            PythonClientUserSetPendingCurrentException(py_ui);
             return( 0 );
         }
 
