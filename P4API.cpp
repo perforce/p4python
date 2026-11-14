@@ -270,7 +270,7 @@ static PyObject * P4Adapter_run(P4Adapter * self, PyObject * args)
     // this is a bit of a hack: it assumes the storage layout of the vector is continuous
     // the other hack is that the API expects (char * const *), but this cannot be stored
     // a std::vector<>, because it cannot exchange pointers
-    
+
     size_t nargs = argv.size()-1;
     PyObject *result = NULL;
     if (nargs > INT_MAX) {
