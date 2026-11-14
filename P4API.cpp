@@ -123,9 +123,14 @@ P4Adapter_init(P4Adapter *self, PyObject *args, PyObject *kwds)
 	    if (PyInt_Check(value)) {
 	    	PythonClientAPI::intsetter isetter = self->clientAPI->GetIntSetter(name);
 	    	if (isetter) {
-	    	    int result = (self->clientAPI->*isetter)(PyInt_AS_LONG(value));
-		    if (result) 
-			return result;
+                long lval = PyInt_AsLong(value);
+                if (lval == -1 && PyErr_Occurred())
+                    return -1;
+                if (lval < INT_MIN || lval > INT_MAX)
+                    return PyErr_SetString(PyExc_OverflowError, "integer out of range"), -1;
+                int result = (self->clientAPI->*isetter)((int)lval);
+                if (result)
+                    return result;
 	    	}
 	    	else {
 	    	    ostringstream os;
@@ -712,6 +717,12 @@ static PyObject * P4Adapter_getattro(P4Adapter *self, PyObject * nameObject)
 static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject * value)
 {
     const char * name = GetPythonString(nameObject);
+    if (!name)
+        return -1;
+
+    // deletion is not supported
+    if (!value)
+        return PyErr_SetString(PyExc_AttributeError, "deletion not supported"), -1;
 
     // Special case first: 
     // If there is a specific ObjectSetter for this name available use this one
@@ -724,7 +735,12 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     if (PyInt_Check(value)) {
     	PythonClientAPI::intsetter isetter = self->clientAPI->GetIntSetter(name);
     	if (isetter) {
-    	    return (self->clientAPI->*isetter)(PyInt_AS_LONG(value));
+            long lval = PyInt_AsLong(value);
+            if (lval == -1 && PyErr_Occurred())
+                return -1;
+            if (lval < INT_MIN || lval > INT_MAX)
+                return PyErr_SetString(PyExc_OverflowError, "integer attribute value out of range"), -1;
+            return (self->clientAPI->*isetter)((int)lval);
     	}
     	else {
     	    ostringstream os;
@@ -752,7 +768,10 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     if (IsString(value)) {
     	PythonClientAPI::strsetter ssetter = self->clientAPI->GetStrSetter(name);
     	if (ssetter) {
-    	    return (self->clientAPI->*ssetter)(GetPythonString(value));
+            const char *cstr = GetPythonString(value);
+            if (!cstr)
+                return -1;
+            return (self->clientAPI->*ssetter)(cstr);
     	}
     	else {
     	    ostringstream os;
@@ -765,7 +784,14 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     
     // can only set int and string or certain object values -> bail out with exception
     ostringstream os;
-    os << "Cannot set attribute : " << name << " with value " << GetPythonString(PyObject_Str(value));
+    PyObject *str = PyObject_Str(value);
+    const char *cstr = str ? GetPythonString(str) : 0;
+    if (!str || !cstr) {
+        Py_XDECREF(str);
+        return -1;
+    }
+    os << "Cannot set attribute : " << name << " with value " << cstr;
+    Py_DECREF(str);
     
     PyErr_SetString(PyExc_AttributeError, os.str().c_str()); 
     return -1;	
@@ -1525,4 +1551,3 @@ initP4API(void)
     return module;
 #endif
 }
-

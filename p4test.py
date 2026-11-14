@@ -973,6 +973,42 @@ class TestP4(TestP4Python):
         self.assertEqual(p4.port, "9999")
         self.assertEqual(p4.client, "myclient")
 
+    def testAdapterAttributeErrorsAndBounds(self):
+        import ctypes
+
+        bits = ctypes.sizeof(ctypes.c_int) * 8
+        minimum, maximum = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+        for value in (minimum, maximum):
+            self.p4.maxresults = value
+            self.assertEqual(self.p4.maxresults, value)
+            self.assertEqual(P4API.P4Adapter(maxresults=value).maxresults, value)
+        for value in (minimum - 1, maximum + 1, -(1 << 100), 1 << 100):
+            with self.assertRaises(OverflowError):
+                self.p4.maxresults = value
+            with self.assertRaises(OverflowError):
+                P4API.P4Adapter(maxresults=value)
+
+        with self.assertRaises(AttributeError):
+            del self.p4.input
+        with self.assertRaises(UnicodeEncodeError):
+            setattr(self.p4, '\ud800', 1)
+        with self.assertRaises(UnicodeEncodeError):
+            self.p4.port = '\ud800'
+
+        class BadString:
+            def __str__(self):
+                raise ValueError("cannot stringify")
+
+        with self.assertRaisesRegex(ValueError, "cannot stringify"):
+            self.p4.port = BadString()
+
+    def testConvertContentLength(self):
+        adapter = P4API.P4Adapter()
+        convert = getattr(adapter, '__convert')
+        self.assertEqual(convert('iso8859-1', 'a\0b'), b'a\0b')
+        with self.assertRaises(UnicodeEncodeError):
+            convert('iso8859-1', '\ud800')
+
     def testUnicode( self ):
         self.enableUnicode()
 

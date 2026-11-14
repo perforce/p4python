@@ -620,10 +620,21 @@ PyObject * PythonClientAPI::Convert(const char * charset, PyObject * content)
 	}
 
 	PyObject * bytes = PyUnicode_AsUTF8String(content);
+    if (!bytes) {
+        delete cvt;
+        return NULL;
+    }
+    Py_ssize_t slen = PyBytes_GET_SIZE(bytes);
+    if (slen > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "content overflow");
+        Py_DECREF(bytes);
+        delete cvt;
+        return NULL;
+    }
 	const char * contentAsUTF8 = PyBytes_AS_STRING(bytes);
 
 	int retlen = 0;
-	const char * converted = cvt->FastCvt(contentAsUTF8, (int)strlen(contentAsUTF8), &retlen);
+    const char * converted = cvt->FastCvt(contentAsUTF8, (int)slen, &retlen);
 	Py_DECREF( bytes ); // we do not need this object anymore
 
 	if (converted == NULL) {
