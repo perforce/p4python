@@ -712,6 +712,12 @@ static PyObject * P4Adapter_getattro(P4Adapter *self, PyObject * nameObject)
 static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject * value)
 {
     const char * name = GetPythonString(nameObject);
+    if (!name)
+        return -1;
+
+    // deletion is not supported
+    if (!value)
+        return PyErr_SetString(PyExc_AttributeError, "deletion not supported"), -1;
 
     // Special case first: 
     // If there is a specific ObjectSetter for this name available use this one
@@ -752,7 +758,10 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     if (IsString(value)) {
     	PythonClientAPI::strsetter ssetter = self->clientAPI->GetStrSetter(name);
     	if (ssetter) {
-    	    return (self->clientAPI->*ssetter)(GetPythonString(value));
+            const char *cstr = GetPythonString(value);
+            if (!cstr)
+                return -1;
+            return (self->clientAPI->*ssetter)(cstr);
     	}
     	else {
     	    ostringstream os;
@@ -765,7 +774,14 @@ static int P4Adapter_setattro(P4Adapter *self, PyObject * nameObject, PyObject *
     
     // can only set int and string or certain object values -> bail out with exception
     ostringstream os;
-    os << "Cannot set attribute : " << name << " with value " << GetPythonString(PyObject_Str(value));
+    PyObject *str = PyObject_Str(value);
+    const char *cstr = str ? GetPythonString(str) : 0;
+    if (!str || !cstr) {
+        Py_XDECREF(str);
+        return -1;
+    }
+    os << "Cannot set attribute : " << name << " with value " << cstr;
+    Py_DECREF(str);
     
     PyErr_SetString(PyExc_AttributeError, os.str().c_str()); 
     return -1;	
