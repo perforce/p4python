@@ -833,11 +833,8 @@ PyObject * PythonClientAPI::Run( const char *cmd, int argc, char * const *argv )
     }
 
     // Check for pending exception from callbacks
-    PyObject *excType, *excValue, *excTb;
-    if( ui.GetPendingException(&excType, &excValue, &excTb) ) {
-	PyErr_Restore(excType, excValue, excTb);
-	return NULL;
-    }
+    if (ui.RaisePendingException())
+        return NULL;
 
     p4py::P4Result &results = ui.GetResults();
 
