@@ -113,7 +113,7 @@ void PythonClientProgress::Total( long total )
 	return;
     }
 
-    PyObject * res = PyObject_CallMethod( this->progress , (char*) "setTotal", (char*)"i", total );
+    PyObject * res = PyObject_CallMethod( this->progress , (char*) "setTotal", (char*)"l", total );
     if( res ) {
 	Py_DECREF( res );
     }
@@ -169,4 +169,3 @@ void PythonClientProgress::Done( int fail )
 
     got_exception = false;
 }
-
