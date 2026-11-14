@@ -223,35 +223,66 @@ static PyObject * P4Adapter_set_var(P4Adapter * self, PyObject *args)
 
 static PyObject * P4Adapter_run(P4Adapter * self, PyObject * args)
 {
-    PyObject * cmd = PyTuple_GetItem(args, 0);
-    if (cmd == NULL) {
-    	return NULL;
-    }
-    
+
     // assume the args are flattened already
     
     vector<const char *> argv;
-    for (Py_ssize_t i = 1; i < PyTuple_Size(args); ++i) {
-	PyObject * item = PyTuple_GET_ITEM(args, i);
+    vector<PyObject *> converted;
+    for (Py_ssize_t i = 0; i < PyTuple_Size(args); ++i) {
+        PyObject * item = PyTuple_GET_ITEM(args, i);
+        bool did_convert = false;
 #if PY_MAJOR_VERSION >= 3
-	// check encoding here?
 	if( ! PyUnicode_Check(item) && ! PyBytes_Check(item) ) { // preserve plain Unicode and Byte strings
 	    item = PyObject_Str(item);
+	    did_convert = true;
 	}
 #else
 	if( ! PyBytes_Check(item) ) {
 	    item = PyObject_Str(item);
+            did_convert = true;
 	}
 #endif
-    	argv.push_back(GetPythonString(item));
+        if (item == NULL) {
+            for (PyObject * obj : converted) {
+                Py_DECREF(obj);
+            }
+            return NULL;
+        }
+        if (did_convert) {
+            converted.push_back(item);
+        }
+        const char * cstr = GetPythonString(item);
+        if (!cstr) {
+            for (PyObject * obj : converted) {
+                Py_DECREF(obj);
+            }
+            return NULL;
+        }
+	argv.push_back(cstr);
     }
+
+    if (argv.empty()) {
+        PyErr_SetString(PyExc_RuntimeError, "No command provided");
+        return NULL;
+    }
+    const char * cmd = argv[0];
     
     // this is a bit of a hack: it assumes the storage layout of the vector is continuous
     // the other hack is that the API expects (char * const *), but this cannot be stored
     // a std::vector<>, because it cannot exchange pointers
-    
-    return self->clientAPI->Run(GetPythonString(cmd), (int)argv.size(), 
-        (argv.size() > 0) ? (char * const *) &argv[0] : NULL );
+
+    size_t nargs = argv.size()-1;
+    PyObject *result = NULL;
+    if (nargs > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "too many arguments");
+    } else {
+        result = self->clientAPI->Run(cmd, (int)nargs,
+            (argv.size() > 1) ? (char * const *) &argv[1] : NULL );
+    }
+    for (PyObject * obj : converted) {
+        Py_DECREF(obj);
+    }
+    return result;
 }
 
 static PyObject * P4API_identify(PyObject * self)
@@ -1525,4 +1556,3 @@ initP4API(void)
     return module;
 #endif
 }
-

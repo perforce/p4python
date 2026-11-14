@@ -769,7 +769,7 @@ const char * GetPythonString(PyObject *obj) {
 	return PyUnicode_AsUTF8(obj);
     }
     else
-	return PyBytes_AS_STRING(obj);
+	return PyBytes_AsString(obj);
 }
 
 #endif
