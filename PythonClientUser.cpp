@@ -568,70 +568,84 @@ void PythonClientUser::InputData( StrBuf *strbuf, Error *e )
     
     debug->debug ( P4PYDBG_CALLS, "[P4] InputData(). Using supplied input" );
 
+    // first, convert an input tuple to a list
+    if ( PyTuple_Check(input) )
+    {
+        PyObject *tmp = PySequence_List(input);
+        if (!tmp) {
+            SetPendingCurrentException();
+            return;
+        }
+        Py_DECREF(input);
+        input = tmp;
+    }
+
     PyObject * inval = input;
     PyObject * tail = input;
     Py_INCREF(inval);
 
-    if( PyTuple_Check(input) && PyTuple_Size(input) > 0 )
+    if ( PyList_Check(input) )
     {
-	PyObject *tmp = inval;
-	inval = PyTuple_GetItem(input, 0);
-	Py_INCREF(inval);
-	Py_DECREF(tmp);
-	tail = PyTuple_GetSlice(input, 1, PyTuple_Size(input));
+        if ( PyList_Size(input) > 0 )
+        {
+            // grab the first element of the list as the input value, keep the rest
+            PyObject *tmp = inval;
+            inval = PyList_GetItem(input, 0);
+            Py_INCREF(inval);
+            Py_DECREF(tmp);
+            tail = PyList_GetSlice(input, 1, PyList_Size(input));
+            if (tail)
+            {
+                PyObject *tmp = input;
+                input = tail;
+                Py_DECREF(tmp);
+            }
+            else
+            {
+                // slice failed, nothing we can do about it
+                Py_CLEAR(inval);
+                SetPendingCurrentException();
+                return;
+            }
+        }
+        else
+        {
+            Py_CLEAR(inval);
+        }
     }
-    else if ( PyList_Check(input) && PyList_Size(input) > 0 )
-    {
-	PyObject *tmp = inval;
-	inval = PyList_GetItem(input, 0);
-	Py_INCREF(inval);
-	Py_DECREF(tmp);
-	tail = PyList_GetSlice(input, 1, PyList_Size(input));
-    }
-    if (tail == NULL)
-    {
-	// slice failed, nothing we can do about it
-	Py_CLEAR(inval);
-	PyErr_WriteUnraisable(Py_None);
-    }
-    else if (tail != input)
-    {
-	PyObject *tmp = input;
-	input = tail;
-	Py_DECREF(tmp);
-    }
-    
+
     if( inval == Py_None || inval == NULL )
     {
-	PyErr_WarnEx( PyExc_UserWarning, 
-		"[P4] Expected user input, found none. "
-		"Missing call to P4.input ?", 1 );
-	Py_XDECREF(inval);
-	return;
+        Py_XDECREF(inval);
+        if (PyErr_WarnEx( PyExc_UserWarning,
+                "[P4] Expected user input, found none. "
+                "Missing call to P4.input ?", 1 ))
+            SetPendingCurrentException();
+        return;
     }
 
     if ( PyDict_Check( inval ) )
     {
-	StrPtr * specDef = varList->GetVar( "specdef" );
+        StrPtr * specDef = varList->GetVar( "specdef" );
 
-	specMgr->AddSpecDef( cmd.Text(), specDef->Text() );
-	specMgr->SpecToString( cmd.Text(), inval, *strbuf, e );
-	Py_DECREF(inval);
-	return;
+        specMgr->AddSpecDef( cmd.Text(), specDef->Text() );
+        specMgr->SpecToString( cmd.Text(), inval, *strbuf, e );
+        Py_DECREF(inval);
+        return;
     }
     
     // Convert whatever's left into a string
     PyObject * str = PyObject_Str(inval);
+    const char * s = str ? GetPythonString(str) : NULL;
     Py_DECREF(inval);
-    if (!str)
+    if (!str || !s)
     {
-        PyErr_WarnEx( PyExc_UserWarning,
-		"[P4] Failed to convert input to string", 1 );
-	PyErr_Clear();
+        SetPendingCurrentException();
+        Py_XDECREF(str);
         return;
     }
 
-    strbuf->Set( GetPythonString(str) );
+    strbuf->Set( s );
     Py_XDECREF(str);
 }
 
