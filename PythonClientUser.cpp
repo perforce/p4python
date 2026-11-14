@@ -122,10 +122,9 @@ void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyOb
     pendingExcTb = tb;
 }
 
-void PythonClientUserSetPendingException(PythonClientUser *ui,
-        PyObject *type, PyObject *value, PyObject *tb)
+bool PythonClientUserSetPendingCurrentException(PythonClientUser *ui)
 {
-    ui->SetPendingException(type, value, tb);
+    return ui->SetPendingCurrentException();
 }
 
 int PythonClientUserIsAlive(PythonClientUser *ui)
