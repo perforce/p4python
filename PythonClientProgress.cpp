@@ -70,10 +70,8 @@ PythonClientProgress::PythonClientProgress(PythonClientUser *clientUser, PyObjec
 	Py_DECREF( res );
     }
     else {
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
 	got_exception = true;
-	ui->SetPendingException(excType, excValue, excTb);
+	ui->SetPendingCurrentException();
 	ui->SetAlive(false);
     }
 }
@@ -94,13 +92,11 @@ void PythonClientProgress::Description( const StrPtr *desc, int units )
 
     PyObject * res = PyObject_CallMethod( this->progress , (char*) "setDescription", (char*)"si", desc->Text(), units );
     if( res ) {
-	Py_DECREF( res );
+        Py_DECREF( res );
     }
     else {
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
 	got_exception = true;
-	ui->SetPendingException(excType, excValue, excTb);
+	ui->SetPendingCurrentException();
 	ui->SetAlive(false);
     }
 }
@@ -115,13 +111,11 @@ void PythonClientProgress::Total( long total )
 
     PyObject * res = PyObject_CallMethod( this->progress , (char*) "setTotal", (char*)"l", total );
     if( res ) {
-	Py_DECREF( res );
+        Py_DECREF( res );
     }
     else {
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
 	got_exception = true;
-	ui->SetPendingException(excType, excValue, excTb);
+	ui->SetPendingCurrentException();
 	ui->SetAlive(false);
     }
 
@@ -137,16 +131,14 @@ int PythonClientProgress::Update( long pos )
 
     PyObject * result = PyObject_CallMethod( this->progress , (char*) "update", (char*)"l", pos );
     if( result == NULL ) { // exception thrown
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
 	got_exception = true;
-	ui->SetPendingException(excType, excValue, excTb);
+	ui->SetPendingCurrentException();
 	ui->SetAlive(false);
 	// Returning 1 here does not stop the operation by itself.
 	return 1;
     }
     else {
-	Py_DECREF( result );
+        Py_DECREF( result );
     }
 
     return 0;
@@ -161,9 +153,7 @@ void PythonClientProgress::Done( int fail )
 	Py_DECREF( res );
     }
     else {
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	ui->SetPendingException(excType, excValue, excTb);
+	ui->SetPendingCurrentException();
 	ui->SetAlive(false);
     }
 
