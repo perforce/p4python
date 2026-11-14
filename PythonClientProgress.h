@@ -49,6 +49,7 @@ public:
 private:
     PythonClientUser *	ui;
     PyObject *	progress;
+    bool	got_exception;
 };
 
 

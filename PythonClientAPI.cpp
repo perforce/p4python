@@ -69,6 +69,7 @@ PythonClientAPI::PythonClientAPI()
     : ui(&debug, &specMgr),
       specMgr(&debug)
 {
+    breakCallback = NULL;
     server2 = 0;
     depth = 0;
     exceptionLevel = 2;
@@ -123,11 +124,13 @@ PythonClientAPI::~PythonClientAPI()
     // can't use logger here, probably already destructed at this time
     debug.printDebug(P4PYDBG_GC, "Destructor PythonClientAPI::~PythonClientAPI called");
 
+    client.SetBreak(NULL);
     if( IsConnected() ) {
 	Error e;
 	client.Final( &e );
 	// Ignore errors
     }
+    delete breakCallback;
     delete enviro;
 }
 
@@ -721,13 +724,7 @@ PyObject * PythonClientAPI::ConnectOrReconnect()
     if ( e.Test() )
 	Py_RETURN_FALSE;
 
-    // If an iterator is defined, reset the break functionality
-    // for the KeepAlive function
-
-    if( ui.GetHandler() != Py_None )
-    {
-	client.SetBreak( &ui );
-    }
+    SetBreakHandler();
 
     SetConnected();
     Py_RETURN_NONE;
@@ -826,11 +823,8 @@ PyObject * PythonClientAPI::Run( const char *cmd, int argc, char * const *argv )
     }
 
     // Check for pending exception from callbacks
-    PyObject *excType, *excValue, *excTb;
-    if( ui.GetPendingException(&excType, &excValue, &excTb) ) {
-	PyErr_Restore(excType, excValue, excTb);
-	return NULL;
-    }
+    if (ui.RaisePendingException())
+        return NULL;
 
     p4py::P4Result &results = ui.GetResults();
 
@@ -905,10 +899,7 @@ int PythonClientAPI::SetHandler( PyObject * iterator )
 	return -1;
     }
 
-    if( iterator == Py_None)
-	client.SetBreak(NULL);
-    else
-	client.SetBreak(&ui);
+    SetBreakHandler();
 
     return 0;
 }
@@ -927,7 +918,25 @@ int PythonClientAPI::SetProgress( PyObject * progress )
 	return -1;
     }
 
+    SetBreakHandler();
+
     return 0;
+}
+
+void PythonClientAPI::SetBreakHandler()
+{
+    if( breakCallback ) {
+	client.SetBreak( breakCallback );
+	return;
+    }
+
+    PyObject *handler = ui.GetHandler();
+    PyObject *progress = ui.GetProgress();
+    bool hasCallback = handler != Py_None || progress != Py_None;
+    Py_DECREF(handler);
+    Py_DECREF(progress);
+
+    client.SetBreak( hasCallback ? &ui : NULL );
 }
 
 PyObject * PythonClientAPI::GetProgress()
@@ -1303,11 +1312,14 @@ void PythonClientAPI::RunCmd(const char *cmd, ClientUser *ui, int argc, char * c
 
 }
 
-void PythonClientAPI::SetBreak(PythonKeepAlive* cb)
+void PythonClientAPI::SetBreak(PyObject* callable)
 {
     if( IsConnected() ) {
         debug.debug(P4PYDBG_COMMANDS, "[P4] Establish the callback" );
+        PythonKeepAlive *cb = new PythonKeepAlive(&ui, callable);
         client.SetBreak(cb);
+        delete breakCallback;
+        breakCallback = cb;
     }
 
 }

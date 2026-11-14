@@ -118,11 +118,17 @@ public:
     void SetPendingException(PyObject *type, PyObject *value, PyObject *tb);
     bool GetPendingException(PyObject **type, PyObject **value, PyObject **tb);
     void ClearPendingException();
+    bool SetPendingCurrentException();  // returns true if an exception was set
+    bool RaisePendingException();   // returns true if an exception was raised
 
     // override from KeepAlive
     virtual int IsAlive()
     {
         return alive;
+    }
+    void SetAlive(bool isAlive)
+    {
+        alive = isAlive;
     }
 
 private:

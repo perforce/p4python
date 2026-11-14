@@ -242,7 +242,7 @@ public:
     void Except( const char *func, const char *msg, const char *cmd );
 
     // SetBreak
-    void SetBreak( PythonKeepAlive* cb );
+    void SetBreak( PyObject* callable );
 
 public:
     // setter/getter methods and attributes
@@ -285,6 +285,7 @@ private:
 
     void	InitFlags()		{ flags = S_INITIAL_STATE;	}
     void	ResetFlags()		{ flags &= ~S_RESET_MASK;	}
+    void	SetBreakHandler();
 
     void	SetTag()		{ flags |= S_TAGGED;		}
     void	ClearTag()		{ flags &= ~S_TAGGED;		}
@@ -321,6 +322,7 @@ private:
 private:
     ClientApi		client;		// Perforce API Class
     PythonClientUser	ui;
+    PythonKeepAlive *	breakCallback;
     Enviro *		enviro;
     PythonDebug		debug;
     p4py::SpecMgr		specMgr;

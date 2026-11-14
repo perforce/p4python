@@ -1168,6 +1168,105 @@ class TestP4(TestP4Python):
                             "Total does not match position %d <> %d" % (callback.totalFileCount, callback.position))
             self.assertEqual(total, callback.position,
                             "Total does not match position %d <> %d" % (total, callback.position))
+
+            cancel_dir = "progress_cancel"
+            cancel_absolute_dir = os.path.join(self.client_root, cancel_dir)
+            os.mkdir(cancel_absolute_dir)
+            cancel_files = [os.path.join(cancel_absolute_dir, "000_large_file")]
+            cancel_files.extend(
+                os.path.join(cancel_absolute_dir, "zzz_file%02d" % index)
+                for index in range(10)
+            )
+            with open(cancel_files[0], 'w') as f:
+                f.write('A' * (8 * 1024 * 1024))
+            for fname in cancel_files[1:]:
+                with open(fname, 'w') as f:
+                    f.write('small file\n')
+            for fname in cancel_files:
+                self.p4.run_add(fname)
+            self.p4.run_submit('-dProgress cancellation files')
+            for fname in cancel_files:
+                os.remove(fname)
+
+            class CancelOnUpdate(P4.Progress, P4.OutputHandler):
+                def __init__(self):
+                    P4.Progress.__init__(self)
+                    P4.OutputHandler.__init__(self)
+                    self.updateCalls = 0
+                    self.exceptionRaised = False
+                    self.callsAfterException = 0
+                    self.doneCalls = 0
+                    self.doneAfterException = 0
+
+                def recordCall(self):
+                    if self.exceptionRaised:
+                        self.callsAfterException += 1
+
+                def init(self, progress_type):
+                    self.recordCall()
+
+                def setDescription(self, description, unit):
+                    self.recordCall()
+
+                def setTotal(self, total):
+                    self.recordCall()
+
+                def update(self, position):
+                    self.recordCall()
+                    self.updateCalls += 1
+                    self.exceptionRaised = True
+                    raise RuntimeError("Progress update interrupted sync")
+
+                def done(self, fail):
+                    self.doneCalls += 1
+                    if self.exceptionRaised:
+                        self.doneAfterException += 1
+                        self.exceptionRaised = False
+
+            cancel_callback = CancelOnUpdate()
+            with self.assertRaises(RuntimeError) as cm:
+                self.p4.run_sync('-f', '//depot/%s/...' % cancel_dir,
+                                 progress=cancel_callback,
+                                 handler=cancel_callback)
+            self.assertEqual(str(cm.exception), "Progress update interrupted sync")
+            self.assertGreater(cancel_callback.updateCalls, 0,
+                               "Progress update callback was not invoked")
+            self.assertEqual(cancel_callback.callsAfterException, 0,
+                             "Progress callback ran again before Done after an exception")
+            self.assertGreater(cancel_callback.doneAfterException, 0,
+                               "Progress done callback was skipped after an exception")
+            self.assertTrue(os.path.exists(cancel_files[-1]),
+                            "Returning 1 alone unexpectedly aborted sync")
+
+            class AlwaysAlive:
+                def __init__(self):
+                    self.calls = 0
+
+                def __call__(self):
+                    self.calls += 1
+                    return True
+
+            keepalive = AlwaysAlive()
+            self.p4.setbreak(keepalive)
+
+            class RaisingProgress(P4.Progress):
+                def __init__(self):
+                    P4.Progress.__init__(self)
+                    self.keepaliveCallsAtException = None
+
+                def update(self, position):
+                    self.keepaliveCallsAtException = keepalive.calls
+                    raise RuntimeError("Progress interrupted with custom keepalive")
+
+            raising_progress = RaisingProgress()
+            with self.assertRaises(RuntimeError) as cm:
+                self.p4.run_sync('-f', '-q', '//depot/%s/000_large_file' % cancel_dir,
+                                 progress=raising_progress)
+            self.assertEqual(str(cm.exception), "Progress interrupted with custom keepalive")
+            self.assertGreater(raising_progress.keepaliveCallsAtException, 0,
+                               "Custom KeepAlive was not called before the Progress error")
+            self.assertEqual(keepalive.calls, raising_progress.keepaliveCallsAtException,
+                             "Internal Progress abort did not suppress the Python KeepAlive callback")
         else:
             print("Test case testProgress needs a 2012.2+ Perforce Server to run")
 
@@ -1807,6 +1906,17 @@ class TestP4(TestP4Python):
                 if self.counter > self.total_count:
                     return 0
                 return 1
+
+        class RaisingKeepAlive:
+            def __init__(self):
+                self.called = False
+
+            def isAlive(self):
+                self.called = True
+                raise KeyboardInterrupt("KeepAlive callback interrupted command")
+
+            def __call__(self):
+                return self.isAlive()
         
         #create a multiple changelist revision
         for i in range(100):
@@ -1913,6 +2023,22 @@ class TestP4(TestP4Python):
             _p4d_proc2.kill()
             _p4d_proc2.wait()
 
+            # --- Case 3: callback exceptions propagate out of the command ---
+            _p4d_proc3, _free_port3 = _start_tcp_p4d()
+            _p4_tcp3 = _connect_tcp(_free_port3)
+            raising_ka = RaisingKeepAlive()
+            _p4_tcp3.setbreak(raising_ka)
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    _p4_tcp3.run("changes")
+                self.assertTrue(raising_ka.called, "isAlive callback was not invoked")
+            finally:
+                try:
+                    _p4_tcp3.disconnect()
+                finally:
+                    _p4d_proc3.kill()
+                    _p4d_proc3.wait()
+
             # Replace self.p4 with fresh unconnected object so tearDown skips
             # disconnect on the stale RSH connection.
             self.p4 = P4.P4()
@@ -1932,6 +2058,14 @@ class TestP4(TestP4Python):
             self.p4.setbreak(ka)
             total_files = len(self.p4.run("changes"))
             self.assertEqual(100, total_files, "Setbreak is not working")
+            self.p4.disconnect()
+
+            self.p4.connect()
+            raising_ka = RaisingKeepAlive()
+            self.p4.setbreak(raising_ka)
+            with self.assertRaises(KeyboardInterrupt):
+                self.p4.run("changes")
+            self.assertTrue(raising_ka.called, "isAlive callback was not invoked")
             self.p4.disconnect()
             return
 

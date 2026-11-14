@@ -31,15 +31,18 @@
 #ifndef PYTHON_KEEP_ALIVE_H
 #define PYTHON_KEEP_ALIVE_H
 
+class PythonClientUser;
+
 class PythonKeepAlive : public KeepAlive {
 public:
-    PythonKeepAlive(PyObject* callable);
+    PythonKeepAlive(PythonClientUser* ui, PyObject* callable);
     ~PythonKeepAlive();
 
     virtual int IsAlive() override;
     virtual int PollMs() override { return 0; }
 
 private:
+    PythonClientUser* py_ui;
     PyObject* py_callable;
 };
 
