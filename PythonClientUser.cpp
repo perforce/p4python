@@ -125,6 +125,9 @@ void PythonClientUser::SetPendingException(PyObject *type, PyObject *value, PyOb
 bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, PyObject **tb)
 {
     if (pendingExcType == NULL) {
+        *type = NULL;
+        *value = NULL;
+        *tb = NULL;
         return false;
     }
 
@@ -138,6 +141,29 @@ bool PythonClientUser::GetPendingException(PyObject **type, PyObject **value, Py
     pendingExcTb = NULL;
 
     return true;
+}
+
+bool PythonClientUser::SetPendingCurrentException()
+{
+    if (PyErr_Occurred())
+    {
+        PyObject *excType, *excValue, *excTb;
+        PyErr_Fetch(&excType, &excValue, &excTb);
+        SetPendingException(excType, excValue, excTb);
+        return true;
+    }
+    return false;
+}
+
+bool PythonClientUser::RaisePendingException()
+{
+    PyObject *excType, *excValue, *excTb;
+    if (GetPendingException(&excType, &excValue, &excTb))
+    {
+        PyErr_Restore(excType, excValue, excTb);
+        return true;
+    }
+    return false;
 }
 
 void PythonClientUser::ClearPendingException()
@@ -174,21 +200,17 @@ static const int CANCEL = 2;
 bool PythonClientUser::CallOutputMethod( const char * method, PyObject * data)
 {
     long answer = REPORT;
-    PyObject *excType, *excValue, *excTb;
-
     PyObject * result = PyObject_CallMethod( this->handler , (char*) method, (char*)"O", data );
     if( result == NULL ) { // exception thrown
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	alive = 0;
+        SetPendingCurrentException();
+        alive = 0;
     }
     else
     {
 	long a = PyInt_AsLong( result );
 	Py_DECREF( result );
 	if( a == -1 && PyErr_Occurred()) {
-	    PyErr_Fetch(&excType, &excValue, &excTb);
-	    SetPendingException(excType, excValue, excTb);
+	    SetPendingCurrentException();
 	    alive = 0;
 	}
 	else
@@ -644,11 +666,9 @@ int PythonClientUser::Resolve( ClientMerge *m, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"resolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	Py_DECREF(mergeData);
-	return CMS_QUIT;
+        SetPendingCurrentException();
+        Py_DECREF(mergeData);
+        return CMS_QUIT;
     }
 
     if (IsString(result)) {
@@ -727,11 +747,9 @@ int PythonClientUser::Resolve( ClientResolveA *m, int preview, Error *e )
 
     PyObject * result = PyObject_CallMethod( this->resolver , (char*)"actionResolve", (char*)"(O)", mergeData );
     if( result == NULL ) { // exception thrown, bug out of here
-	PyObject *excType, *excValue, *excTb;
-	PyErr_Fetch(&excType, &excValue, &excTb);
-	SetPendingException(excType, excValue, excTb);
-	Py_DECREF(mergeData);
-	return CMS_QUIT;
+        SetPendingCurrentException();
+        Py_DECREF(mergeData);
+        return CMS_QUIT;
     }
 
     StrBuf reply = GetPythonString( result );
